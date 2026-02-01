@@ -24,6 +24,7 @@ func NewServer() *server.MCPServer {
 	registerSystemTools(s)
 	registerProcessTools(s)
 	registerNetworkTools(s)
+	registerCalendarTools(s)
 
 	return s
 }
@@ -147,4 +148,48 @@ func registerNetworkTools(s *server.MCPServer) {
 		mcp.WithDescription("Perform DNS lookup for a hostname"),
 		mcp.WithString("hostname", mcp.Required(), mcp.Description("Hostname to look up")),
 	), tools.NetworkDNSLookup)
+}
+
+func registerCalendarTools(s *server.MCPServer) {
+	// calendar_list_events
+	s.AddTool(mcp.NewTool("calendar_list_events",
+		mcp.WithDescription("List upcoming calendar events from macOS Calendar"),
+		mcp.WithNumber("days", mcp.Description("Number of days to look ahead (default: 7)")),
+	), tools.CalendarListEvents)
+
+	// calendar_create_event
+	s.AddTool(mcp.NewTool("calendar_create_event",
+		mcp.WithDescription("Create a new event in macOS Calendar"),
+		mcp.WithString("title", mcp.Required(), mcp.Description("Event title")),
+		mcp.WithString("start_time", mcp.Required(), mcp.Description("Start time (format: 2024-01-15 14:00)")),
+		mcp.WithNumber("duration", mcp.Description("Duration in minutes (default: 60)")),
+		mcp.WithString("calendar", mcp.Description("Calendar name (default: Calendar)")),
+		mcp.WithString("location", mcp.Description("Event location")),
+		mcp.WithString("notes", mcp.Description("Event notes")),
+	), tools.CalendarCreateEvent)
+
+	// calendar_list_calendars
+	s.AddTool(mcp.NewTool("calendar_list_calendars",
+		mcp.WithDescription("List available calendars"),
+	), tools.CalendarListCalendars)
+
+	// calendar_today
+	s.AddTool(mcp.NewTool("calendar_today",
+		mcp.WithDescription("Get today's agenda - all events scheduled for today"),
+	), tools.CalendarToday)
+
+	// calendar_search
+	s.AddTool(mcp.NewTool("calendar_search",
+		mcp.WithDescription("Search for events by keyword"),
+		mcp.WithString("keyword", mcp.Required(), mcp.Description("Keyword to search for in event titles")),
+		mcp.WithNumber("days", mcp.Description("Number of days to search ahead (default: 30)")),
+	), tools.CalendarSearchEvents)
+
+	// calendar_delete_event
+	s.AddTool(mcp.NewTool("calendar_delete_event",
+		mcp.WithDescription("Delete a calendar event by title"),
+		mcp.WithString("title", mcp.Required(), mcp.Description("Exact title of the event to delete")),
+		mcp.WithString("calendar", mcp.Description("Calendar name to search in (optional)")),
+		mcp.WithString("date", mcp.Description("Date of the event (format: 2024-01-15, optional)")),
+	), tools.CalendarDeleteEvent)
 }

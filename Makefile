@@ -1,0 +1,90 @@
+VERSION := 1.0.0
+BUILD := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+PROJECTNAME := lingti-bot
+GOBASE := $(shell pwd)
+GOBIN := $(GOBASE)/dist
+GOARCH ?= $(shell go env GOARCH)
+GOOS ?= $(shell go env GOOS)
+LDFLAGS=-ldflags "-X github.com/pltanton/lingti-bot/internal/mcp.ServerVersion=$(VERSION) -X main.Build=$(BUILD) -w -s"
+GOBUILD=go build $(LDFLAGS)
+
+.PHONY: all build clean install uninstall test darwin-arm64 darwin-amd64 darwin-universal linux-amd64 linux-arm64 linux-all
+
+# Default: build for current platform
+build:
+	$(GOBUILD) -o $(GOBIN)/$(PROJECTNAME) .
+
+# Build all platforms
+all: darwin-arm64 darwin-amd64 linux-all
+
+# macOS builds
+darwin-amd64:
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=darwin $(GOBUILD) -o $(GOBIN)/$(PROJECTNAME)-$(VERSION)-darwin-amd64 .
+
+darwin-arm64:
+	CGO_ENABLED=0 GOARCH=arm64 GOOS=darwin $(GOBUILD) -o $(GOBIN)/$(PROJECTNAME)-$(VERSION)-darwin-arm64 .
+
+darwin-universal: darwin-amd64 darwin-arm64
+	lipo -create -output $(GOBIN)/$(PROJECTNAME)-$(VERSION)-darwin-universal \
+		$(GOBIN)/$(PROJECTNAME)-$(VERSION)-darwin-amd64 \
+		$(GOBIN)/$(PROJECTNAME)-$(VERSION)-darwin-arm64
+
+# Linux builds
+linux-amd64:
+	CGO_ENABLED=0 GOARCH=amd64 GOOS=linux $(GOBUILD) -o $(GOBIN)/$(PROJECTNAME)-$(VERSION)-linux-amd64 .
+
+linux-arm64:
+	CGO_ENABLED=0 GOARCH=arm64 GOOS=linux $(GOBUILD) -o $(GOBIN)/$(PROJECTNAME)-$(VERSION)-linux-arm64 .
+
+linux-all: linux-amd64 linux-arm64
+
+# Code signing (macOS)
+codesign:
+	codesign --verbose --force --deep -o runtime --sign "Developer ID Application: Suzhou Ruilisi Technology Co.,Ltd. (ACK44BB9HY)" $(GOBIN)/$(PROJECTNAME)-$(VERSION)-darwin-universal
+
+# Install as system service
+install: build
+	@echo "Installing $(PROJECTNAME)..."
+	$(GOBIN)/$(PROJECTNAME) service install
+
+# Uninstall system service
+uninstall:
+	@echo "Uninstalling $(PROJECTNAME)..."
+	$(GOBIN)/$(PROJECTNAME) service uninstall
+
+# Start service
+start:
+	$(GOBIN)/$(PROJECTNAME) service start
+
+# Stop service
+stop:
+	$(GOBIN)/$(PROJECTNAME) service stop
+
+# Service status
+status:
+	$(GOBIN)/$(PROJECTNAME) service status
+
+# Run tests
+test:
+	go test -v ./...
+
+# Clean build artifacts
+clean:
+	rm -rf $(GOBIN)
+	rm -f $(PROJECTNAME)
+
+# Format code
+fmt:
+	go fmt ./...
+
+# Lint code
+lint:
+	golangci-lint run
+
+# Run locally (for development)
+run:
+	go run . serve
+
+# Show version
+version:
+	@echo "$(PROJECTNAME) $(VERSION) ($(BUILD))"
