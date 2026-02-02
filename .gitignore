@@ -32,3 +32,4 @@ dist
 .env
 .env
 *.local.json
+*.env
