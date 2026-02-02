@@ -29,7 +29,7 @@ type LoggingConfig struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Transport: "stdio",
-		Port:      8080,
+		Port:      8686,
 		Security: SecurityConfig{
 			AllowedPaths:        []string{},
 			BlockedCommands:     []string{"rm -rf /", "mkfs", "dd if="},
