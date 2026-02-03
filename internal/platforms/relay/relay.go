@@ -19,7 +19,7 @@ const (
 	DefaultWebhookURL = "https://bot.lingti.com/webhook"
 	ClientVersion     = "1.0.0"
 
-	pingInterval      = 30 * time.Second
+	pingInterval      = 15 * time.Second
 	writeTimeout      = 10 * time.Second
 	readTimeout       = 60 * time.Second
 	initialRetryDelay = 5 * time.Second
@@ -377,6 +377,9 @@ func (p *Platform) sendPong() {
 func (p *Platform) heartbeat() {
 	defer p.wg.Done()
 
+	// Send initial ping immediately to keep connection alive
+	p.sendPing()
+
 	ticker := time.NewTicker(pingInterval)
 	defer ticker.Stop()
 
@@ -385,20 +388,24 @@ func (p *Platform) heartbeat() {
 		case <-p.ctx.Done():
 			return
 		case <-ticker.C:
-			p.connMu.Lock()
-			conn := p.conn
-			p.connMu.Unlock()
-
-			if conn == nil {
-				continue
-			}
-
-			ping := PingPong{Type: "ping"}
-			conn.SetWriteDeadline(time.Now().Add(writeTimeout))
-			if err := conn.WriteJSON(ping); err != nil {
-				log.Printf("[Relay] Failed to send ping: %v", err)
-			}
+			p.sendPing()
 		}
+	}
+}
+
+func (p *Platform) sendPing() {
+	p.connMu.Lock()
+	conn := p.conn
+	p.connMu.Unlock()
+
+	if conn == nil {
+		return
+	}
+
+	ping := PingPong{Type: "ping"}
+	conn.SetWriteDeadline(time.Now().Add(writeTimeout))
+	if err := conn.WriteJSON(ping); err != nil {
+		log.Printf("[Relay] Failed to send ping: %v", err)
 	}
 }
 
