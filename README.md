@@ -6,9 +6,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/官网-cli.lingti.com-blue?style=flat)](https://cli.lingti.com/bot)
 
-**灵缇**是一个集 **MCP Server**、**多平台消息网关**、**丰富工具集**、**智能对话**于一体的 AI Bot 平台。各大平台秒接入，兼具 [OpenClaw](docs/openclaw-reference.md) 式灵活接入。
+**灵小缇**是一个集 **MCP Server**、**多平台消息网关**、**丰富工具集**、**智能对话**于一体的 AI Bot 平台。各大平台秒接入，兼具 [OpenClaw](docs/openclaw-reference.md) 式灵活接入。
 
-> **为什么叫"灵缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵缇 bot 同样敏捷高效，是你忠实的 AI 助手。
+> **为什么叫"灵小缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵小缇同样敏捷高效，是你忠实的 AI 助手。
 
 ## 功能概览
 
@@ -81,7 +81,7 @@
 
 ## MCP Server
 
-灵缇作为标准 MCP (Model Context Protocol) 服务器，让任何支持 MCP 的 AI 客户端都能访问本地系统资源。
+灵小缇作为标准 MCP (Model Context Protocol) 服务器，让任何支持 MCP 的 AI 客户端都能访问本地系统资源。
 
 ### 支持的客户端
 
@@ -130,7 +130,7 @@
 
 ## 多平台消息网关
 
-灵缇支持多种企业消息平台，让你的团队在熟悉的工具中直接与 AI 对话。
+灵小缇支持多种企业消息平台，让你的团队在熟悉的工具中直接与 AI 对话。
 
 ### 支持的平台
 
@@ -144,7 +144,7 @@
 
 ### 一键接入
 
-灵缇提供 **1 分钟内一键接入**方式，无需复杂配置：
+灵小缇提供 **1 分钟内一键接入**方式，无需复杂配置：
 
 ```bash
 # 设置 API 密钥
@@ -181,7 +181,7 @@ export FEISHU_APP_SECRET="..."
 
 ## MCP 工具集
 
-灵缇提供 **40+ MCP 工具**，覆盖日常工作的方方面面。
+灵小缇提供 **40+ MCP 工具**，覆盖日常工作的方方面面。
 
 ### 工具分类
 
@@ -334,7 +334,7 @@ export FEISHU_APP_SECRET="..."
 
 ## 智能对话
 
-灵缇支持**多轮对话记忆**，能够记住之前的对话内容，实现连续自然的交流体验。
+灵小缇支持**多轮对话记忆**，能够记住之前的对话内容，实现连续自然的交流体验。
 
 ### 工作原理
 
@@ -664,4 +664,4 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/lingti/lingti-code/maste
 
 ---
 
-**灵缇** - 你的敏捷 AI 助手 🐕
+**灵小缇** - 你的敏捷 AI 助手 🐕
