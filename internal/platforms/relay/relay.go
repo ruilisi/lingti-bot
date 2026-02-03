@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -317,8 +318,23 @@ func (p *Platform) readLoop() {
 				return
 			}
 
-			debug.Log("Read error (msgType=%d): %v", msgType, err)
-			log.Printf("[Relay] Read error: %v", err)
+			// Check for close error with reason (e.g., duplicate connection)
+			if closeErr, ok := err.(*websocket.CloseError); ok {
+				// Policy violation means another client connected with same user-id
+				if closeErr.Code == websocket.ClosePolicyViolation {
+					log.Printf("[Relay] Disconnected: %s", closeErr.Text)
+					log.Printf("[Relay] Exiting - please ensure only one client is running per user-id")
+					os.Exit(1)
+				}
+				if closeErr.Text != "" {
+					log.Printf("[Relay] Connection closed by server: %s", closeErr.Text)
+				} else {
+					log.Printf("[Relay] Connection closed with code %d", closeErr.Code)
+				}
+			} else {
+				debug.Log("Read error (msgType=%d): %v", msgType, err)
+				log.Printf("[Relay] Read error: %v", err)
+			}
 			p.connMu.Lock()
 			if p.conn != nil {
 				p.conn.Close()
