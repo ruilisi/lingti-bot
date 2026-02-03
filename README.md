@@ -1,4 +1,4 @@
-# lingti-bot (灵缇)
+# lingti-bot (灵小缇)
 
 > 🚀 **更适合中国宝宝体质的 AI Bot，让 AI Bot 接入更简单**
 
@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/官网-cli.lingti.com-blue?style=flat)](https://cli.lingti.com/bot)
 
-**灵缇**是一个集 **MCP Server**、**多平台消息网关**、**丰富工具集**、**智能对话**于一体的 AI Bot 平台。不仅提供和 [OpenClaw](docs/openclaw-reference.md) 一样灵活的各平台软件接入方式，还在各平台提供 **1 分钟内一键接入**方式，让 AI 助手能够快速访问你的本地计算机资源。
+**灵缇**是一个集 **MCP Server**、**多平台消息网关**、**丰富工具集**、**智能对话**于一体的 AI Bot 平台。各大平台秒接入，兼具 [OpenClaw](docs/openclaw-reference.md) 式灵活接入。
 
 > **为什么叫"灵缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵缇 bot 同样敏捷高效，是你忠实的 AI 助手。
 
@@ -18,6 +18,33 @@
 | **多平台消息网关** | 企业消息平台集成 | Slack、飞书一键接入，支持云中继 |
 | **MCP 工具集** | 40+ 本地系统工具 | 文件、Shell、系统、网络、日历、音乐等 |
 | **智能对话** | 多轮对话与记忆 | 上下文记忆、多 AI 后端（Claude/Kimi/DeepSeek） |
+
+## Sponsors
+
+- **[灵缇游戏加速](https://game.lingti.com)** - PC/Mac/iOS/Android 全平台游戏加速、热点加速、AI 及学术资源定向加速，And More
+- **[灵缇路由](https://router.lingti.com)** - 您的路由管家、网游电竞专家
+
+## lingti-cli 生态
+
+**lingti-bot** 是 **lingti-cli** 五位一体平台的核心开源组件。
+
+我们正在打造 **AI 时代开发者与知识工作者的终极效率平台**：
+
+| 模块 | 定位 | 说明 |
+|------|------|------|
+| **CLI** | 操控总台 | 统一入口，如同操作系统的引导程序 |
+| **Net** | 全球网络 | 跨洲 200Mbps 加速，畅享全球 AI 服务 |
+| **Token** | 数字员工 | Token 即代码，代码即生产力 |
+| **Bot** | 助理管理 | 数字员工接入与管理，简单到极致 ← *本项目* |
+| **Code** | 开发环境 | Terminal 回归舞台中央，极致输入效率 |
+
+> **为什么是 cli.lingti.com/bot 而不是 bot.lingti.com？**
+>
+> 因为 Bot 是 CLI 生态的一部分。IDE 正在消亡，纯粹的 Terminal 界面正在回归。未来的生产力工具，将围绕 CLI 重新构建。
+
+**加入我们：** 无论您是追求极致效率的顶尖开发者、关注 AI 时代生产力变革的投资人，还是想成为 Sponsor，欢迎联系：jiefeng@ruc.edu.cn / jiefeng.hopkins@gmail.com
+
+---
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -602,13 +629,6 @@ MIT License
 ## 贡献
 
 欢迎提交 Issue 和 Pull Request！
-
----
-
-## Sponsors
-
-- **[灵缇游戏加速](https://game.lingti.com)** - PC/Mac/iOS/Android 全平台游戏加速、热点加速、AI 及学术资源定向加速，And More
-- **[灵缇路由](https://router.lingti.com)** - 您的路由管家、网游电竞专家
 
 ---
 
