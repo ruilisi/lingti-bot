@@ -145,9 +145,12 @@ func runRelay(cmd *cobra.Command, args []string) {
 	}
 	modelName := relayModel
 	if modelName == "" {
-		if providerName == "deepseek" {
+		switch providerName {
+		case "deepseek":
 			modelName = "deepseek-chat"
-		} else {
+		case "kimi", "moonshot":
+			modelName = "moonshot-v1-8k"
+		default:
 			modelName = "claude-sonnet-4-20250514"
 		}
 	}
