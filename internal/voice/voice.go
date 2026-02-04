@@ -350,8 +350,18 @@ func (p *SystemProvider) macSTT(ctx context.Context, audio []byte, opts STTOptio
 		return "", fmt.Errorf("whisper model not found (download from https://huggingface.co/ggerganov/whisper.cpp)")
 	}
 
+	// Build whisper-cli arguments
+	args := []string{"-m", modelPath, "-f", tmpFile.Name(), "--no-prints", "-nt"}
+
+	// Add language option (default to Chinese)
+	lang := opts.Language
+	if lang == "" {
+		lang = "zh" // Default to Chinese
+	}
+	args = append(args, "-l", lang)
+
 	// Run whisper-cli
-	cmd := exec.CommandContext(ctx, whisperPath, "-m", modelPath, "-f", tmpFile.Name(), "--no-prints", "-nt")
+	cmd := exec.CommandContext(ctx, whisperPath, args...)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return "", fmt.Errorf("whisper failed: %w\n%s", err, output)

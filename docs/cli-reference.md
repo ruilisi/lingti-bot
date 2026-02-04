@@ -212,6 +212,7 @@ lingti-bot voice [flags]
 |------|---------|---------|-------------|
 | `-d, --duration` | | `5` | Recording duration in seconds |
 | `-s, --speak` | | `false` | Speak AI responses aloud (TTS) |
+| `-l, --language` | | `zh` | Language for speech recognition (zh, en, ja, etc.) |
 | `--provider` | `VOICE_PROVIDER` | `system` | Voice provider: system, openai |
 | `--voice-api-key` | `VOICE_API_KEY` | | Voice API key (for openai provider) |
 | `--voice-name` | | | Voice name for TTS |
@@ -223,8 +224,14 @@ lingti-bot voice [flags]
 **Examples:**
 
 ```bash
-# Basic voice input (5 second recording)
+# Basic voice input (5 second recording, Chinese by default)
 lingti-bot voice \
+  --ai-provider claude \
+  --api-key sk-ant-xxx
+
+# English voice input
+lingti-bot voice \
+  --language en \
   --ai-provider claude \
   --api-key sk-ant-xxx
 

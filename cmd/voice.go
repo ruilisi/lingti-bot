@@ -21,6 +21,7 @@ var (
 	recordDuration  int
 	speakResponse   bool
 	voiceName       string
+	voiceLanguage   string
 )
 
 var voiceCmd = &cobra.Command{
@@ -54,6 +55,7 @@ func init() {
 	voiceCmd.Flags().IntVarP(&recordDuration, "duration", "d", 5, "Recording duration in seconds")
 	voiceCmd.Flags().BoolVarP(&speakResponse, "speak", "s", false, "Speak AI responses aloud")
 	voiceCmd.Flags().StringVar(&voiceName, "voice-name", "", "Voice name for TTS")
+	voiceCmd.Flags().StringVarP(&voiceLanguage, "language", "l", "zh", "Language for speech recognition (default: zh)")
 	voiceCmd.Flags().StringVar(&voiceProvider, "provider", "", "Voice provider: system, openai (or VOICE_PROVIDER env)")
 	voiceCmd.Flags().StringVar(&voiceAPIKey, "voice-api-key", "", "Voice API key (or VOICE_API_KEY env)")
 	voiceCmd.Flags().StringVar(&aiProvider, "ai-provider", "", "AI provider: claude, deepseek, kimi (or AI_PROVIDER env)")
@@ -132,6 +134,7 @@ func runVoice(cmd *cobra.Command, args []string) {
 	recorder, err := voice.NewRecorder(voice.RecorderConfig{
 		Provider: voiceProvider,
 		APIKey:   voiceAPIKey,
+		Language: voiceLanguage,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating voice recorder: %v\n", err)

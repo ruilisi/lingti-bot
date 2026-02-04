@@ -14,6 +14,7 @@ import (
 type Recorder struct {
 	provider   Provider
 	sampleRate int
+	language   string
 }
 
 // RecorderConfig holds recorder configuration
@@ -21,6 +22,7 @@ type RecorderConfig struct {
 	Provider   string // "system", "openai"
 	APIKey     string // API key for cloud providers
 	SampleRate int    // Sample rate in Hz (default: 16000)
+	Language   string // Language code for STT (default: "zh")
 }
 
 // NewRecorder creates a new voice recorder
@@ -46,9 +48,15 @@ func NewRecorder(cfg RecorderConfig) (*Recorder, error) {
 		sampleRate = 16000
 	}
 
+	language := cfg.Language
+	if language == "" {
+		language = "zh" // Default to Chinese
+	}
+
 	return &Recorder{
 		provider:   provider,
 		sampleRate: sampleRate,
+		language:   language,
 	}, nil
 }
 
@@ -145,7 +153,7 @@ func (r *Recorder) Record(ctx context.Context, duration time.Duration) ([]byte, 
 
 // Transcribe converts audio to text
 func (r *Recorder) Transcribe(ctx context.Context, audio []byte) (string, error) {
-	return r.provider.SpeechToText(ctx, audio, STTOptions{})
+	return r.provider.SpeechToText(ctx, audio, STTOptions{Language: r.language})
 }
 
 // RecordAndTranscribe records audio and transcribes it in one step
