@@ -25,7 +25,7 @@
 curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 ```
 
-## 微信一键接入
+### 微信一键接入
 
 - 微信搜索：`灵缇小秘`，关注并发送任意信息，即可获取安装方法及绑定所需的 `user-id`
 - 执行一键安装命令，并按示例配置模型连接后，即可绑定微信与本地 bot
@@ -34,8 +34,6 @@ curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 
 **示例**
 ```bash
-curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
-
 lingti-bot relay \
 --user-id USER_ID_FROM_WECHAT \
 --platform wechat \
@@ -43,7 +41,7 @@ lingti-bot relay \
 --api-key YOUR_API_KEY \
 --base-url "https://api.minimaxi.com/anthropic/v1"
 ```
-## 飞书接入
+### 飞书接入
 
 - 飞书商店应用正在上架流程中，目前可通过自建应用实现绑定。教程请参考：[飞书集成指南](https://github.com/ruilisi/lingti-bot/blob/master/docs/feishu-integration.md)
 
@@ -70,7 +68,26 @@ lingti-bot relay \
 >
 > 因为 Bot 是 CLI 生态的一部分。IDE 正在消亡，纯粹的 Terminal 界面正在回归。未来的生产力工具，将围绕 CLI 重新构建。
 
-**加入我们：** 无论您是追求极致效率的顶尖开发者、关注 AI 时代生产力变革的投资人，还是想成为 Sponsor，欢迎联系：jiefeng@ruc.edu.cn / jiefeng.hopkins@gmail.com
+**联系我们 / 加入我们**
+
+<table>
+  <tr>
+    <th align="center" width="56%">邮件联系</th>
+    <th align="center" width="44%">扫码加群</th>
+  </tr>
+  <tr>
+    <td width="56%">
+      无论您是追求极致效率的顶尖开发者、关注 AI 时代生产力变革的投资人，还是想成为 Sponsor，
+      欢迎联系：
+      <code>jiefeng@ruc.edu.cn</code>
+      /
+      <code>jiefeng.hopkins@gmail.com</code>
+    </td>
+    <td width="44%" align="center">
+      <img src="https://lingti-1302055788.cos.ap-guangzhou.myqcloud.com/contact_me_qr-2.png" alt="扫码加群" width="230" />
+    </td>
+  </tr>
+</table>
 
 ---
 
