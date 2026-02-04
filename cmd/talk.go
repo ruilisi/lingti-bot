@@ -49,8 +49,9 @@ func init() {
 	talkCmd.Flags().StringVar(&wakeWord, "wake-word", "", "Wake word for activation (or WAKE_WORD env)")
 	talkCmd.Flags().BoolVar(&continuousMode, "continuous", false, "Keep listening after each response")
 	talkCmd.Flags().StringVar(&defaultVoice, "voice", "", "Default voice name")
-	talkCmd.Flags().StringVar(&aiProvider, "provider", "", "AI provider (or AI_PROVIDER env)")
+	talkCmd.Flags().StringVar(&aiProvider, "provider", "", "AI provider: claude, deepseek, kimi (or AI_PROVIDER env)")
 	talkCmd.Flags().StringVar(&aiAPIKey, "api-key", "", "AI API Key (or AI_API_KEY env)")
+	talkCmd.Flags().StringVar(&aiBaseURL, "base-url", "", "AI API base URL (or AI_BASE_URL env)")
 	talkCmd.Flags().StringVar(&aiModel, "model", "", "Model name (or AI_MODEL env)")
 }
 
@@ -89,6 +90,12 @@ func runTalk(cmd *cobra.Command, args []string) {
 			aiModel = os.Getenv("ANTHROPIC_MODEL")
 		}
 	}
+	if aiBaseURL == "" {
+		aiBaseURL = os.Getenv("AI_BASE_URL")
+		if aiBaseURL == "" {
+			aiBaseURL = os.Getenv("ANTHROPIC_BASE_URL")
+		}
+	}
 
 	if aiAPIKey == "" {
 		fmt.Fprintln(os.Stderr, "Error: AI_API_KEY is required")
@@ -99,6 +106,7 @@ func runTalk(cmd *cobra.Command, args []string) {
 	aiAgent, err := agent.New(agent.Config{
 		Provider: aiProvider,
 		APIKey:   aiAPIKey,
+		BaseURL:  aiBaseURL,
 		Model:    aiModel,
 	})
 	if err != nil {

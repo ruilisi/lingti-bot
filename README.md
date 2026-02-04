@@ -174,6 +174,7 @@ export FEISHU_APP_SECRET="..."
 
 ### 详细文档
 
+- [命令行参考](docs/cli-reference.md) - 完整的命令行使用文档
 - [Slack 集成指南](docs/slack-integration.md) - 完整的 Slack 应用配置教程
 - [飞书集成指南](docs/feishu-integration.md) - 飞书/Lark 应用配置教程
 

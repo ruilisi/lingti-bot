@@ -56,8 +56,9 @@ func init() {
 	voiceCmd.Flags().StringVar(&voiceName, "voice-name", "", "Voice name for TTS")
 	voiceCmd.Flags().StringVar(&voiceProvider, "provider", "", "Voice provider: system, openai (or VOICE_PROVIDER env)")
 	voiceCmd.Flags().StringVar(&voiceAPIKey, "voice-api-key", "", "Voice API key (or VOICE_API_KEY env)")
-	voiceCmd.Flags().StringVar(&aiProvider, "ai-provider", "", "AI provider (or AI_PROVIDER env)")
+	voiceCmd.Flags().StringVar(&aiProvider, "ai-provider", "", "AI provider: claude, deepseek, kimi (or AI_PROVIDER env)")
 	voiceCmd.Flags().StringVar(&aiAPIKey, "api-key", "", "AI API Key (or AI_API_KEY env)")
+	voiceCmd.Flags().StringVar(&aiBaseURL, "base-url", "", "AI API base URL (or AI_BASE_URL env)")
 	voiceCmd.Flags().StringVar(&aiModel, "model", "", "Model name (or AI_MODEL env)")
 }
 
@@ -90,6 +91,12 @@ func runVoice(cmd *cobra.Command, args []string) {
 			aiModel = os.Getenv("ANTHROPIC_MODEL")
 		}
 	}
+	if aiBaseURL == "" {
+		aiBaseURL = os.Getenv("AI_BASE_URL")
+		if aiBaseURL == "" {
+			aiBaseURL = os.Getenv("ANTHROPIC_BASE_URL")
+		}
+	}
 
 	if aiAPIKey == "" {
 		fmt.Fprintln(os.Stderr, "Error: AI_API_KEY is required")
@@ -100,6 +107,7 @@ func runVoice(cmd *cobra.Command, args []string) {
 	aiAgent, err := agent.New(agent.Config{
 		Provider: aiProvider,
 		APIKey:   aiAPIKey,
+		BaseURL:  aiBaseURL,
 		Model:    aiModel,
 	})
 	if err != nil {
