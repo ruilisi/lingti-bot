@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Website](https://img.shields.io/badge/官网-cli.lingti.com-blue?style=flat)](https://cli.lingti.com/bot)
 
-**灵小缇** 是一个集 **MCP Server**、**多平台消息网关**、**丰富工具集**、**智能对话**于一体的 AI Bot 平台。微信、飞书等平台秒接入，兼具 [OpenClaw](docs/openclaw-reference.md) 式灵活接入。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
+**灵小缇** 是一个集 **MCP Server**、**多平台消息网关**、**丰富工具集**、**智能对话**、**语音交互**于一体的 AI Bot 平台。微信、飞书等平台秒接入，兼具 [OpenClaw](docs/openclaw-reference.md) 式灵活接入。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
 
 > **为什么叫"灵小缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵小缇同样敏捷高效，是你忠实的 AI 助手。
 
@@ -81,6 +81,23 @@ curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 | **多 AI 后端** | Claude、DeepSeek、Kimi、MiniMax 按需切换 |
 | **对话管理** | `/new`、`/reset`、`新对话` 命令重置对话 |
 
+### 语音交互 — 解放双手，畅快对话
+
+支持语音输入和语音输出，实现真正的免提 AI 交互体验。
+
+| 命令 | 说明 |
+|------|------|
+| `lingti-bot voice` | 按 Enter 录音，AI 处理后返回文字/语音响应 |
+| `lingti-bot talk` | 持续监听模式，支持唤醒词激活 |
+
+| 语音引擎 | 说明 |
+|----------|------|
+| **system** | 系统原生（macOS say/whisper-cpp，Linux espeak） |
+| **openai** | OpenAI TTS + Whisper API |
+| **elevenlabs** | ElevenLabs 高品质 TTS |
+
+**特点：** 本地语音识别（whisper-cpp）、多语言支持、唤醒词激活、连续对话模式。
+
 ### 功能速览表
 
 | 模块 | 说明 | 特点 |
@@ -89,6 +106,7 @@ curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 | **多平台消息网关** | 消息平台集成 | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
 | **MCP 工具集** | 60+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
 | **智能对话** | 多轮对话与记忆 | 上下文记忆、多 AI 后端（Claude/DeepSeek/Kimi/MiniMax） |
+| **语音交互** | 语音输入/输出 | 本地 whisper-cpp、OpenAI、ElevenLabs 多引擎支持 |
 
 ## 云中继：零门槛接入企业消息平台
 
@@ -557,6 +575,57 @@ AI：好的，我帮你创建了一个标题为"小明"的日程。
 | `清除历史` | 中文命令，清除对话历史 |
 
 > **提示**：当你想让 AI "忘记"之前的内容重新开始时，只需发送 `/new` 即可。
+
+---
+
+## 语音交互
+
+灵小缇支持**语音输入和语音输出**，让你可以完全通过语音与 AI 交互，解放双手。
+
+### 两种模式
+
+| 模式 | 命令 | 说明 |
+|------|------|------|
+| **Voice 模式** | `lingti-bot voice` | 按 Enter 开始录音，录音结束后 AI 处理并响应 |
+| **Talk 模式** | `lingti-bot talk` | 持续监听，支持唤醒词激活，连续对话 |
+
+### 语音引擎
+
+| 引擎 | STT（语音转文字） | TTS（文字转语音） | 说明 |
+|------|------------------|------------------|------|
+| **system** | whisper-cpp | macOS say / Linux espeak | 本地处理，无需联网 |
+| **openai** | Whisper API | OpenAI TTS | 云端处理，效果好 |
+| **elevenlabs** | - | ElevenLabs API | 高品质语音合成 |
+
+### 快速开始
+
+```bash
+# Voice 模式（按 Enter 录音）
+lingti-bot voice --api-key sk-xxx
+
+# 指定录音时长和语言
+lingti-bot voice -d 10 -l zh --api-key sk-xxx
+
+# 启用语音回复
+lingti-bot voice --speak --api-key sk-xxx
+
+# Talk 模式（持续监听）
+lingti-bot talk --api-key sk-xxx
+
+# 使用 OpenAI 语音引擎
+lingti-bot voice --provider openai --voice-api-key sk-xxx --api-key sk-xxx
+```
+
+### 环境变量
+
+| 变量 | 说明 |
+|------|------|
+| `VOICE_PROVIDER` | 语音引擎：system、openai、elevenlabs |
+| `VOICE_API_KEY` | 语音 API 密钥（OpenAI 或 ElevenLabs） |
+| `WHISPER_MODEL` | whisper-cpp 模型路径 |
+| `WAKE_WORD` | 唤醒词（如 "hey lingti"） |
+
+> **提示**：首次使用 system 引擎时会自动下载 whisper-cpp 模型（约 141MB）。
 
 ---
 
