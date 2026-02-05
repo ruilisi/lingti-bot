@@ -105,6 +105,13 @@ type OutgoingResponse struct {
 	Text      string `json:"text"`
 }
 
+// ErrorMessage is an error notification from the server
+type ErrorMessage struct {
+	Type    string `json:"type"`
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message"`
+}
+
 // PingPong for heartbeat
 type PingPong struct {
 	Type string `json:"type"`
@@ -389,6 +396,8 @@ func (p *Platform) readLoop() {
 		case "message":
 			debug.Log("Received message, handling")
 			p.handleMessage(message)
+		case "error":
+			p.handleError(message)
 		default:
 			log.Printf("[Relay] Unknown message type: %s", jsonMsg.Type)
 		}
@@ -431,6 +440,21 @@ func (p *Platform) handleMessage(data []byte) {
 			ThreadID:  msg.ThreadID,
 			Metadata:  metadata,
 		})
+	}
+}
+
+// handleError processes an error message from the server
+func (p *Platform) handleError(data []byte) {
+	var errMsg ErrorMessage
+	if err := json.Unmarshal(data, &errMsg); err != nil {
+		log.Printf("[Relay] Failed to parse error message: %v", err)
+		return
+	}
+
+	if errMsg.Code != "" {
+		log.Printf("[Relay] Server error [%s]: %s", errMsg.Code, errMsg.Message)
+	} else {
+		log.Printf("[Relay] Server error: %s", errMsg.Message)
 	}
 }
 
