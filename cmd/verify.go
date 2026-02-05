@@ -27,33 +27,30 @@ var (
 
 var verifyCmd = &cobra.Command{
 	Use:   "verify",
-	Short: "Verify callback URL for messaging platforms",
-	Long: `Connect to the cloud relay service to verify callback URL configuration.
+	Short: "[Deprecated] Use 'relay' instead - it handles both verification and messages",
+	Long: `[DEPRECATED] This command is no longer needed. Use 'relay' instead.
 
-This command is used to complete the initial callback URL verification when
-setting up a messaging platform integration. It sends your credentials to the
-cloud relay server so it can respond to the platform's verification request.
+The 'relay' command now handles both callback URL verification AND message
+processing in a single command. There's no need to run verify separately.
 
-Supported platforms:
-  - wecom: Enterprise WeChat (企业微信)
+Simplified workflow with 'relay':
+  1. Run 'relay' with your credentials and AI provider
+  2. Configure callback URL in the platform (e.g., https://bot.lingti.com/wecom)
+  3. Save config - verification succeeds automatically
+  4. Messages are processed immediately with your AI provider
 
-Usage flow:
-  1. Create your app in the platform's admin console
-  2. Run this verify command with your credentials
-  3. Configure callback URL in the platform (e.g., https://bot.lingti.com/wecom)
-  4. Save the configuration - the platform will send a verification request
-  5. Once verified, you can stop this command and use 'relay' for normal operation
-
-Example for WeCom:
-  lingti-bot verify \
-    --platform wecom \
+Example (recommended):
+  lingti-bot relay --platform wecom \
     --wecom-corp-id YOUR_CORP_ID \
     --wecom-agent-id YOUR_AGENT_ID \
     --wecom-secret YOUR_SECRET \
     --wecom-token YOUR_TOKEN \
-    --wecom-aes-key YOUR_AES_KEY
+    --wecom-aes-key YOUR_AES_KEY \
+    --provider deepseek \
+    --api-key YOUR_API_KEY
 
-After verification succeeds, use 'lingti-bot relay' to start processing messages.`,
+This 'verify' command still works for backward compatibility, but it cannot
+respond to user messages - only the 'relay' command can do that.`,
 	Run: runVerify,
 }
 
@@ -73,6 +70,12 @@ func init() {
 }
 
 func runVerify(cmd *cobra.Command, args []string) {
+	// Show deprecation warning
+	log.Println("")
+	log.Println("[DEPRECATED] The 'verify' command is deprecated.")
+	log.Println("Use 'relay' instead - it handles both verification AND messages.")
+	log.Println("")
+
 	// Get values from flags or environment
 	if verifyPlatform == "" {
 		verifyPlatform = os.Getenv("RELAY_PLATFORM")
@@ -199,9 +202,13 @@ func runVerify(cmd *cobra.Command, args []string) {
 	verifyPlatformInstance.Stop()
 
 	log.Println("")
-	log.Println("Next step: Use 'lingti-bot relay' to start processing messages:")
+	log.Println("[Deprecated] This verify command is no longer needed.")
 	log.Println("")
-	log.Printf("  lingti-bot relay --user-id YOUR_ID --platform %s \\\n", verifyPlatform)
-	log.Println("    --provider deepseek --api-key YOUR_API_KEY \\")
-	log.Printf("    --wecom-corp-id %s ...\n", verifyWeComCorpID)
+	log.Println("Use 'relay' instead - it handles both verification AND messages:")
+	log.Println("")
+	log.Printf("  lingti-bot relay --platform %s \\\n", verifyPlatform)
+	log.Printf("    --wecom-corp-id %s \\\n", verifyWeComCorpID)
+	log.Println("    --wecom-agent-id ... --wecom-secret ... \\")
+	log.Println("    --wecom-token ... --wecom-aes-key ... \\")
+	log.Println("    --provider deepseek --api-key YOUR_API_KEY")
 }

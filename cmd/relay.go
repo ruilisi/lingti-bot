@@ -40,7 +40,7 @@ using your local AI API key.
 This allows you to use the official lingti-bot service on Feishu/Slack/WeChat
 without registering your own bot application.
 
-User Flow:
+User Flow (Feishu/Slack/WeChat):
   1. Follow the official lingti-bot on Feishu/Slack/WeChat
   2. Send /whoami to get your user ID
   3. Run: lingti-bot relay --user-id <ID> --platform feishu
@@ -48,13 +48,10 @@ User Flow:
   5. Responses are sent back through the relay service
 
 WeCom Cloud Relay:
-  For WeCom, you can use cloud relay mode without setting up your own server.
-  Configure callback URL in WeCom: https://bot.lingti.com/wecom
-  Then run relay with your WeCom credentials:
+  For WeCom, no user-id is needed - just provide your credentials.
+  This command handles both callback verification AND message processing.
 
-  lingti-bot relay \
-    --user-id YOUR_USER_ID \
-    --platform wecom \
+  lingti-bot relay --platform wecom \
     --wecom-corp-id YOUR_CORP_ID \
     --wecom-agent-id YOUR_AGENT_ID \
     --wecom-secret YOUR_SECRET \
@@ -63,8 +60,13 @@ WeCom Cloud Relay:
     --provider deepseek \
     --api-key YOUR_API_KEY
 
+  1. Run this command first
+  2. Configure callback URL in WeCom: https://bot.lingti.com/wecom
+  3. Save config in WeCom - verification will succeed automatically
+  4. Messages will be processed with your AI provider
+
 Required:
-  --user-id     Your user ID from /whoami
+  --user-id     Your user ID from /whoami (not needed for WeCom)
   --platform    Platform type: feishu, slack, wechat, or wecom
   --api-key     AI API key (or AI_API_KEY env)
 
@@ -162,10 +164,6 @@ func runRelay(cmd *cobra.Command, args []string) {
 	}
 
 	// Validate required parameters
-	if relayUserID == "" {
-		fmt.Fprintln(os.Stderr, "Error: --user-id is required (get it from /whoami)")
-		os.Exit(1)
-	}
 	if relayPlatform == "" {
 		fmt.Fprintln(os.Stderr, "Error: --platform is required (feishu, slack, wechat, or wecom)")
 		os.Exit(1)
@@ -177,6 +175,17 @@ func runRelay(cmd *cobra.Command, args []string) {
 	if relayAPIKey == "" {
 		fmt.Fprintln(os.Stderr, "Error: AI API key is required (--api-key or AI_API_KEY env)")
 		os.Exit(1)
+	}
+
+	// For WeCom, user-id is optional - auto-generate from corp_id
+	// For other platforms, user-id is required
+	if relayUserID == "" {
+		if relayPlatform == "wecom" && relayWeComCorpID != "" {
+			relayUserID = "wecom-" + relayWeComCorpID
+		} else if relayPlatform != "wecom" {
+			fmt.Fprintln(os.Stderr, "Error: --user-id is required (get it from /whoami)")
+			os.Exit(1)
+		}
 	}
 
 	// Validate WeCom credentials when platform is wecom

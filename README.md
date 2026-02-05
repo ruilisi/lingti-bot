@@ -25,17 +25,20 @@
 
 传统接入企业微信等平台需要：公网服务器 → 域名备案 → HTTPS 证书 → 防火墙配置 → 回调服务开发...
 
-**lingti-bot 云中继** 将这一切简化为 3 条命令：
+**lingti-bot 云中继** 将这一切简化为 3 步：
 
 ```bash
 # 步骤 1: 安装
 curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 
-# 步骤 2: 验证回调 URL（运行后去平台后台配置 https://bot.lingti.com/wecom）
-lingti-bot verify --platform wecom --wecom-corp-id ... --wecom-token ...
+# 步骤 2: 配置企业可信IP（应用管理 → 找到应用 → 企业可信IP → 添加 106.52.166.51）
 
-# 步骤 3: 开始处理消息
-lingti-bot relay --platform wecom --provider deepseek --api-key sk-xxx ...
+# 步骤 3: 一条命令搞定验证和消息处理
+lingti-bot relay --platform wecom \
+  --wecom-corp-id ... --wecom-token ... --wecom-aes-key ... \
+  --provider deepseek --api-key sk-xxx
+
+# 然后去企业微信后台配置回调 URL: https://bot.lingti.com/wecom
 ```
 
 **工作原理：**
@@ -77,20 +80,21 @@ curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 通过**云中继模式**，无需公网服务器即可接入企业微信：
 
 ```bash
-# 1. 先运行 verify 命令完成回调验证
-lingti-bot verify --platform wecom \
+# 1. 先去企业微信后台配置企业可信IP
+#    应用管理 → 找到应用 → 企业可信IP → 添加: 106.52.166.51
+
+# 2. 一条命令搞定验证和消息处理
+lingti-bot relay --platform wecom \
   --wecom-corp-id YOUR_CORP_ID \
   --wecom-agent-id YOUR_AGENT_ID \
   --wecom-secret YOUR_SECRET \
   --wecom-token YOUR_TOKEN \
-  --wecom-aes-key YOUR_AES_KEY
+  --wecom-aes-key YOUR_AES_KEY \
+  --provider deepseek \
+  --api-key YOUR_API_KEY
 
-# 2. 去企业微信后台配置回调 URL: https://bot.lingti.com/wecom
-
-# 3. 验证成功后，运行 relay 处理消息
-lingti-bot relay --user-id YOUR_ID --platform wecom \
-  --provider deepseek --api-key YOUR_API_KEY \
-  --wecom-corp-id ... --wecom-token ... --wecom-aes-key ...
+# 3. 去企业微信后台配置回调 URL: https://bot.lingti.com/wecom
+#    保存配置后验证自动完成，消息立即可以处理
 ```
 
 详细教程请参考：[企业微信集成指南](docs/wecom-integration.md)
