@@ -237,6 +237,8 @@ func runRelay(cmd *cobra.Command, args []string) {
 			modelName = "deepseek-chat"
 		case "kimi", "moonshot":
 			modelName = "moonshot-v1-8k"
+		case "gemini":
+			modelName = "gemini-2.0-flash-exp"
 		default:
 			modelName = "claude-sonnet-4-20250514"
 		}
