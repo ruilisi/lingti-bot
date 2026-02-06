@@ -26,6 +26,7 @@ func NewServer() *server.MCPServer {
 	registerNetworkTools(s)
 	registerCalendarTools(s)
 	registerFileManagerTools(s)
+	registerBrowserTools(s)
 
 	return s
 }
@@ -223,4 +224,85 @@ func registerFileManagerTools(s *server.MCPServer) {
 		mcp.WithDescription("Move files to Trash instead of permanently deleting (macOS)"),
 		mcp.WithArray("files", mcp.Required(), mcp.Description("Array of file paths to move to Trash")),
 	), tools.FileMoveToTrash)
+}
+
+func registerBrowserTools(s *server.MCPServer) {
+	// browser_start
+	s.AddTool(mcp.NewTool("browser_start",
+		mcp.WithDescription("Launch a browser for automation (snapshot-then-act pattern). Uses an isolated profile."),
+		mcp.WithBoolean("headless", mcp.Description("Run in headless mode without visible window (default: true)")),
+		mcp.WithString("url", mcp.Description("Initial URL to navigate to after launch")),
+		mcp.WithString("executable_path", mcp.Description("Path to browser executable (auto-detected if omitted)")),
+	), tools.BrowserStart)
+
+	// browser_stop
+	s.AddTool(mcp.NewTool("browser_stop",
+		mcp.WithDescription("Close the browser"),
+	), tools.BrowserStop)
+
+	// browser_status
+	s.AddTool(mcp.NewTool("browser_status",
+		mcp.WithDescription("Check if the browser is running and get current state"),
+	), tools.BrowserStatus)
+
+	// browser_navigate
+	s.AddTool(mcp.NewTool("browser_navigate",
+		mcp.WithDescription("Navigate to a URL. Auto-starts headless browser if not running."),
+		mcp.WithString("url", mcp.Required(), mcp.Description("URL to navigate to")),
+	), tools.BrowserNavigate)
+
+	// browser_snapshot
+	s.AddTool(mcp.NewTool("browser_snapshot",
+		mcp.WithDescription("Capture the page accessibility tree with numbered refs. Use these refs with browser_click/browser_type to interact with elements. Re-run after page changes."),
+	), tools.BrowserSnapshot)
+
+	// browser_screenshot
+	s.AddTool(mcp.NewTool("browser_screenshot",
+		mcp.WithDescription("Take a screenshot of the current page"),
+		mcp.WithString("path", mcp.Description("Output file path (default: ~/Desktop/browser_screenshot_<timestamp>.png)")),
+		mcp.WithBoolean("full_page", mcp.Description("Capture the full scrollable page (default: false)")),
+	), tools.BrowserScreenshot)
+
+	// browser_click
+	s.AddTool(mcp.NewTool("browser_click",
+		mcp.WithDescription("Click an element by its ref number from browser_snapshot"),
+		mcp.WithNumber("ref", mcp.Required(), mcp.Description("Element ref number from browser_snapshot")),
+	), tools.BrowserClick)
+
+	// browser_type
+	s.AddTool(mcp.NewTool("browser_type",
+		mcp.WithDescription("Type text into an element by its ref number from browser_snapshot"),
+		mcp.WithNumber("ref", mcp.Required(), mcp.Description("Element ref number from browser_snapshot")),
+		mcp.WithString("text", mcp.Required(), mcp.Description("Text to type")),
+		mcp.WithBoolean("submit", mcp.Description("Press Enter after typing (default: false)")),
+	), tools.BrowserType)
+
+	// browser_press
+	s.AddTool(mcp.NewTool("browser_press",
+		mcp.WithDescription("Press a keyboard key (Enter, Tab, Escape, Backspace, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, Space, Delete, Home, End, PageUp, PageDown)"),
+		mcp.WithString("key", mcp.Required(), mcp.Description("Key name to press")),
+	), tools.BrowserPress)
+
+	// browser_execute_js
+	s.AddTool(mcp.NewTool("browser_execute_js",
+		mcp.WithDescription("Execute JavaScript on the current page. Use to dismiss modals/overlays, extract data, or interact with elements that can't be reached via refs."),
+		mcp.WithString("script", mcp.Required(), mcp.Description("JavaScript code to execute (runs in page context)")),
+	), tools.BrowserExecuteJS)
+
+	// browser_tabs
+	s.AddTool(mcp.NewTool("browser_tabs",
+		mcp.WithDescription("List all open browser tabs with their target IDs and URLs"),
+	), tools.BrowserTabs)
+
+	// browser_tab_open
+	s.AddTool(mcp.NewTool("browser_tab_open",
+		mcp.WithDescription("Open a new browser tab"),
+		mcp.WithString("url", mcp.Description("URL to open (default: about:blank)")),
+	), tools.BrowserTabOpen)
+
+	// browser_tab_close
+	s.AddTool(mcp.NewTool("browser_tab_close",
+		mcp.WithDescription("Close a browser tab by target ID, or close the active tab if no ID given"),
+		mcp.WithString("target_id", mcp.Description("Target ID of the tab to close (from browser_tabs)")),
+	), tools.BrowserTabClose)
 }

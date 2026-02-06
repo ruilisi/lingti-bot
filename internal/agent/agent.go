@@ -312,11 +312,12 @@ func (a *Agent) HandleMessage(ctx context.Context, msg router.Message) (router.R
 - music_search: Search and play
 
 ### Browser Automation (snapshot-then-act pattern)
-- browser_navigate: Navigate to a URL (auto-starts browser)
+- browser_navigate: Navigate to a URL (auto-starts headed Chrome)
 - browser_snapshot: Capture accessibility tree with numbered refs
 - browser_click: Click an element by ref number
 - browser_type: Type text into element by ref number (optional submit with Enter)
 - browser_press: Press keyboard key (Enter, Tab, Escape, etc.)
+- browser_execute_js: Run JavaScript on the page (dismiss modals, extract data, etc.)
 - browser_screenshot: Take page screenshot
 - browser_tabs: List all open tabs
 - browser_tab_open: Open new tab
@@ -336,6 +337,11 @@ You MUST follow the **snapshot-then-act** pattern for ALL browser interactions:
 - GOOD: Navigate to https://www.xiaohongshu.com → snapshot → find search box → type keyword → submit
 
 Always simulate real user behavior: navigate to the base URL first, then use the page's UI elements (search boxes, buttons, menus) to accomplish the task step by step. Refs are invalidated after page changes — always re-snapshot.
+
+**Handling modals/overlays:** If an element is blocked by a modal or overlay (error message mentions "element covered by"), use browser_execute_js to dismiss it. Example scripts:
+- document.querySelector('.modal-overlay').remove()
+- document.querySelector('.dialog-close-btn').click()
+Then re-snapshot and continue.
 
 ## Important Rules
 1. **ALWAYS use tools** - Never tell users to do things manually
