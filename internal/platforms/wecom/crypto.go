@@ -176,8 +176,8 @@ func (mc *MsgCrypt) encrypt(plaintext string) (string, error) {
 		[]byte(mc.corpID),
 	}, nil)
 
-	// PKCS7 padding
-	fullMsg = pkcs7Pad(fullMsg, aes.BlockSize)
+	// PKCS7 padding (WeCom uses 32-byte block size)
+	fullMsg = pkcs7Pad(fullMsg, wecomBlockSize)
 
 	block, err := aes.NewCipher(mc.aesKey)
 	if err != nil {
@@ -193,6 +193,10 @@ func (mc *MsgCrypt) encrypt(plaintext string) (string, error) {
 	return base64.StdEncoding.EncodeToString(ciphertext), nil
 }
 
+// wecomBlockSize is the block size used by WeCom for PKCS7 padding
+// Note: WeCom uses 32 bytes, not the standard AES block size of 16
+const wecomBlockSize = 32
+
 // pkcs7Pad adds PKCS7 padding
 func pkcs7Pad(data []byte, blockSize int) []byte {
 	padding := blockSize - len(data)%blockSize
@@ -200,13 +204,16 @@ func pkcs7Pad(data []byte, blockSize int) []byte {
 	return append(data, padtext...)
 }
 
-// pkcs7Unpad removes PKCS7 padding
+// pkcs7Unpad removes PKCS7 padding (using WeCom's 32-byte block size)
 func pkcs7Unpad(data []byte) ([]byte, error) {
 	if len(data) == 0 {
 		return nil, fmt.Errorf("empty data")
 	}
+	if len(data)%wecomBlockSize != 0 {
+		return nil, fmt.Errorf("data length not multiple of block size")
+	}
 	padding := int(data[len(data)-1])
-	if padding > len(data) || padding > aes.BlockSize {
+	if padding > len(data) || padding > wecomBlockSize {
 		return nil, fmt.Errorf("invalid padding")
 	}
 	return data[:len(data)-padding], nil
