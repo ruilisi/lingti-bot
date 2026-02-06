@@ -61,6 +61,12 @@ func createProvider(cfg Config) (Provider, error) {
 			BaseURL: cfg.BaseURL,
 			Model:   cfg.Model,
 		})
+	case "gemini", "google":
+		return NewGeminiProvider(GeminiConfig{
+			APIKey:  cfg.APIKey,
+			BaseURL: cfg.BaseURL,
+			Model:   cfg.Model,
+		})
 	case "claude", "anthropic", "":
 		return NewClaudeProvider(ClaudeConfig{
 			APIKey:  cfg.APIKey,

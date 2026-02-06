@@ -34,8 +34,8 @@ type ChatResponse struct {
 type Message struct {
 	Role       string // "user", "assistant", "tool"
 	Content    string
-	ToolCalls  []ToolCall       // For assistant messages with tool calls
-	ToolResult *ToolResult      // For tool result messages
+	ToolCalls  []ToolCall  // For assistant messages with tool calls
+	ToolResult *ToolResult // For tool result messages
 }
 
 // ToolCall represents a tool invocation by the model
@@ -43,6 +43,7 @@ type ToolCall struct {
 	ID    string
 	Name  string
 	Input json.RawMessage
+	Meta  map[string]any // Provider-specific metadata (e.g. Gemini thought_signature)
 }
 
 // ToolResult represents the result of a tool execution

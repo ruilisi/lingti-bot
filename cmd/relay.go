@@ -238,7 +238,7 @@ func runRelay(cmd *cobra.Command, args []string) {
 		case "kimi", "moonshot":
 			modelName = "moonshot-v1-8k"
 		case "gemini":
-			modelName = "gemini-2.0-flash-exp"
+			modelName = "gemini-3-flash-preview"
 		default:
 			modelName = "claude-sonnet-4-20250514"
 		}
