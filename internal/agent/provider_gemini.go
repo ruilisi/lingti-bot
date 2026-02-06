@@ -11,7 +11,7 @@ import (
 
 const (
 	geminiDefaultBaseURL = "https://generativelanguage.googleapis.com/v1beta"
-	geminiDefaultModel   = "gemini-2.0-flash-exp"
+	geminiDefaultModel   = "gemini-3-flash-preview"
 )
 
 // GeminiProvider implements the Provider interface for Google Gemini
@@ -59,26 +59,29 @@ func (p *GeminiProvider) Name() string {
 
 // Gemini API request/response structures
 type geminiRequest struct {
-	Contents         []geminiContent   `json:"contents"`
-	SystemInstruction *geminiContent   `json:"systemInstruction,omitempty"`
-	Tools            []geminiTool      `json:"tools,omitempty"`
-	GenerationConfig *generationConfig `json:"generationConfig,omitempty"`
+	Contents          []geminiContent   `json:"contents"`
+	SystemInstruction *geminiContent    `json:"systemInstruction,omitempty"`
+	Tools             []geminiTool      `json:"tools,omitempty"`
+	GenerationConfig  *generationConfig `json:"generationConfig,omitempty"`
 }
 
 type geminiContent struct {
-	Role  string        `json:"role,omitempty"`
-	Parts []geminiPart  `json:"parts"`
+	Role  string       `json:"role,omitempty"`
+	Parts []geminiPart `json:"parts"`
 }
 
 type geminiPart struct {
-	Text         string              `json:"text,omitempty"`
-	FunctionCall *geminiFunctionCall `json:"functionCall,omitempty"`
+	Text             string                  `json:"text,omitempty"`
+	FunctionCall     *geminiFunctionCall     `json:"functionCall,omitempty"`
 	FunctionResponse *geminiFunctionResponse `json:"functionResponse,omitempty"`
+	ThoughtSignature string                  `json:"thoughtSignature,omitempty"`
 }
 
 type geminiFunctionCall struct {
-	Name string         `json:"name"`
-	Args map[string]any `json:"args"`
+	Name    string         `json:"name"`
+	Args    map[string]any `json:"args"`
+	ID      string         `json:"id,omitempty"`
+	Thought bool           `json:"thought,omitempty"` // Keep for compatibility if boolean
 }
 
 type geminiFunctionResponse struct {
@@ -105,8 +108,8 @@ type geminiResponse struct {
 }
 
 type geminiCandidate struct {
-	Content       geminiContent `json:"content"`
-	FinishReason  string        `json:"finishReason"`
+	Content      geminiContent `json:"content"`
+	FinishReason string        `json:"finishReason"`
 }
 
 // Chat sends messages and returns a response
@@ -226,11 +229,27 @@ func (p *GeminiProvider) toGeminiContent(msg Message) geminiContent {
 		for _, tc := range msg.ToolCalls {
 			var args map[string]any
 			json.Unmarshal(tc.Input, &args)
+
+			fc := &geminiFunctionCall{
+				Name: tc.Name,
+				Args: args,
+			}
+			var thoughtSignature string
+			if tc.Meta != nil {
+				if id, ok := tc.Meta["id"].(string); ok {
+					fc.ID = id
+				}
+				if thought, ok := tc.Meta["thought"].(bool); ok {
+					fc.Thought = thought
+				}
+				if ts, ok := tc.Meta["thought_signature"].(string); ok {
+					thoughtSignature = ts
+				}
+			}
+
 			content.Parts = append(content.Parts, geminiPart{
-				FunctionCall: &geminiFunctionCall{
-					Name: tc.Name,
-					Args: args,
-				},
+				FunctionCall:     fc,
+				ThoughtSignature: thoughtSignature,
 			})
 		}
 
@@ -259,10 +278,30 @@ func (p *GeminiProvider) fromGeminiResponse(resp geminiResponse) ChatResponse {
 		if part.FunctionCall != nil {
 			// Convert function call to tool call
 			argsJSON, _ := json.Marshal(part.FunctionCall.Args)
+
+			// Capture duplicate metadata
+			meta := make(map[string]any)
+			if part.FunctionCall.ID != "" {
+				meta["id"] = part.FunctionCall.ID
+			}
+			if part.FunctionCall.Thought {
+				meta["thought"] = part.FunctionCall.Thought
+			}
+			if part.ThoughtSignature != "" {
+				meta["thought_signature"] = part.ThoughtSignature
+			}
+
+			// Determine ID to use (Gemini requires name match for results, but might send ID now)
+			id := part.FunctionCall.Name
+			if part.FunctionCall.ID != "" {
+				id = part.FunctionCall.ID
+			}
+
 			toolCalls = append(toolCalls, ToolCall{
-				ID:    part.FunctionCall.Name, // Gemini doesn't provide IDs, use name
+				ID:    id,
 				Name:  part.FunctionCall.Name,
 				Input: argsJSON,
+				Meta:  meta,
 			})
 		}
 	}
