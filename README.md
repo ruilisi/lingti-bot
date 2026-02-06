@@ -52,6 +52,8 @@ curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 | **中国平台** | 原生支持飞书/企微/钉钉 | 需自行集成 |
 | **云中继** | ✅ 免自建服务器，秒级接入微信/企微 | ❌ 需自建 Web 服务 |
 
+> 详细功能对比请参考：[OpenClaw vs lingti-bot 技术特性对比](docs/openclaw-feature-comparison.md)
+
 **为什么选择纯 Go + 纯文本输出？**
 
 > *"Simplicity is the ultimate sophistication."* — Leonardo da Vinci
@@ -462,6 +464,7 @@ export FEISHU_APP_SECRET="..."
 - [Slack 集成指南](docs/slack-integration.md) - 完整的 Slack 应用配置教程
 - [飞书集成指南](docs/feishu-integration.md) - 飞书/Lark 应用配置教程
 - [企业微信集成指南](docs/wecom-integration.md) - 企业微信应用配置教程
+- [OpenClaw 技术特性对比](docs/openclaw-feature-comparison.md) - 详细功能差异分析
 
 ---
 

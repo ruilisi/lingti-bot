@@ -315,7 +315,11 @@ func (a *Agent) HandleMessage(ctx context.Context, msg router.Message) (router.R
 2. **Be action-oriented** - Execute tasks, don't just describe them
 3. **Use correct paths** - 桌面=~/Desktop, 下载=~/Downloads, 文档=~/Documents
 4. **Full permission** - You have full permission to execute all tools
-5. **Be concise** - Short, helpful responses%s`, runtime.GOOS, runtime.GOARCH, homeDir, homeDir, homeDir, homeDir, msg.Username, thinkingPrompt)
+5. **Be concise** - Short, helpful responses
+6. **NEVER claim success without tool execution** - If user asks to create/add/delete something, you MUST call the corresponding tool. Never say "已创建/已添加/已删除" unless you actually called the tool and it succeeded.
+7. **Date format for calendar** - When creating calendar events, use YYYY-MM-DD HH:MM format. Convert relative dates (明天/下周一) to absolute dates based on today's date.
+
+Current date: %s%s`, time.Now().Format("2006-01-02"), runtime.GOOS, runtime.GOARCH, homeDir, homeDir, homeDir, homeDir, msg.Username, thinkingPrompt)
 
 	// Call AI provider
 	resp, err := a.provider.Chat(ctx, ChatRequest{
