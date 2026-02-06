@@ -15,11 +15,12 @@ import (
 
 // Browser manages a browser instance for automation.
 type Browser struct {
-	mu       sync.Mutex
-	browser  *rod.Browser
-	running  bool
-	headless bool
-	dataDir  string
+	mu        sync.Mutex
+	browser   *rod.Browser
+	running   bool
+	headless  bool
+	connected bool // true when attached to external Chrome (don't close on Stop)
+	dataDir   string
 
 	// refs holds the latest snapshot ref map (ref number → RefEntry).
 	refs map[int]RefEntry
@@ -48,15 +49,21 @@ type StartOptions struct {
 	Headless       bool
 	ExecutablePath string
 	URL            string
+	ConnectURL     string // CDP address to connect to existing Chrome (e.g. "127.0.0.1:9222")
 }
 
-// Start launches a new browser instance.
+// Start launches a new browser instance or connects to an existing one.
 func (b *Browser) Start(opts StartOptions) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 
 	if b.running {
 		return fmt.Errorf("browser already running")
+	}
+
+	// Connect to existing Chrome via CDP
+	if opts.ConnectURL != "" {
+		return b.connectLocked(opts.ConnectURL, opts.URL)
 	}
 
 	b.headless = opts.Headless
@@ -83,17 +90,18 @@ func (b *Browser) Start(opts StartOptions) error {
 		return fmt.Errorf("failed to launch browser: %w", err)
 	}
 
-	browser := rod.New().ControlURL(controlURL)
-	if err := browser.Connect(); err != nil {
+	brow := rod.New().ControlURL(controlURL)
+	if err := brow.Connect(); err != nil {
 		return fmt.Errorf("failed to connect to browser: %w", err)
 	}
 
-	b.browser = browser
+	b.browser = brow
 	b.running = true
+	b.connected = false
 	b.refs = make(map[int]RefEntry)
 
 	if opts.URL != "" {
-		page, err := browser.Page(proto.TargetCreateTarget{URL: opts.URL})
+		page, err := brow.Page(proto.TargetCreateTarget{URL: opts.URL})
 		if err != nil {
 			return fmt.Errorf("failed to open initial page: %w", err)
 		}
@@ -103,7 +111,36 @@ func (b *Browser) Start(opts StartOptions) error {
 	return nil
 }
 
-// Stop closes the browser.
+// connectLocked connects to an existing Chrome at the given CDP address.
+// Must be called with b.mu held.
+func (b *Browser) connectLocked(addr string, initialURL string) error {
+	controlURL, err := launcher.ResolveURL(addr)
+	if err != nil {
+		return fmt.Errorf("failed to resolve CDP address %s (is Chrome running with --remote-debugging-port?): %w", addr, err)
+	}
+
+	brow := rod.New().ControlURL(controlURL)
+	if err := brow.Connect(); err != nil {
+		return fmt.Errorf("failed to connect to browser at %s: %w", addr, err)
+	}
+
+	b.browser = brow
+	b.running = true
+	b.connected = true
+	b.refs = make(map[int]RefEntry)
+
+	if initialURL != "" {
+		page, err := brow.Page(proto.TargetCreateTarget{URL: initialURL})
+		if err != nil {
+			return fmt.Errorf("failed to open initial page: %w", err)
+		}
+		page.MustWaitStable()
+	}
+
+	return nil
+}
+
+// Stop closes the browser (or just disconnects if attached to external Chrome).
 func (b *Browser) Stop() error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -112,18 +149,22 @@ func (b *Browser) Stop() error {
 		return fmt.Errorf("browser not running")
 	}
 
-	if err := b.browser.Close(); err != nil {
-		return fmt.Errorf("failed to close browser: %w", err)
+	if !b.connected {
+		if err := b.browser.Close(); err != nil {
+			return fmt.Errorf("failed to close browser: %w", err)
+		}
 	}
+	// When connected to external Chrome, just drop the reference — don't close it.
 
 	b.browser = nil
 	b.running = false
+	b.connected = false
 	b.refs = make(map[int]RefEntry)
 	return nil
 }
 
 // EnsureRunning starts the browser if not already running.
-// Defaults to headed mode with local Chrome if available.
+// Tries to connect to existing Chrome on port 9222 first, then launches a new one.
 func (b *Browser) EnsureRunning() error {
 	b.mu.Lock()
 	running := b.running
@@ -132,6 +173,12 @@ func (b *Browser) EnsureRunning() error {
 	if running {
 		return nil
 	}
+
+	// Try connecting to existing Chrome with debugging port
+	if _, err := launcher.ResolveURL("127.0.0.1:9222"); err == nil {
+		return b.Start(StartOptions{ConnectURL: "127.0.0.1:9222"})
+	}
+
 	return b.Start(StartOptions{
 		Headless:       false,
 		ExecutablePath: detectChrome(),
@@ -143,6 +190,13 @@ func (b *Browser) IsRunning() bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return b.running
+}
+
+// IsConnected returns whether the browser is attached to an external Chrome.
+func (b *Browser) IsConnected() bool {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.connected
 }
 
 // Rod returns the underlying rod browser. Caller must check IsRunning first.
@@ -195,6 +249,7 @@ func (b *Browser) GetRef(ref int) (RefEntry, bool) {
 type StatusInfo struct {
 	Running   bool   `json:"running"`
 	Headless  bool   `json:"headless"`
+	Connected bool   `json:"connected"` // attached to external Chrome (vs launched)
 	Pages     int    `json:"pages"`
 	ActiveURL string `json:"active_url"`
 }
@@ -237,8 +292,9 @@ func (b *Browser) Status() StatusInfo {
 	defer b.mu.Unlock()
 
 	info := StatusInfo{
-		Running:  b.running,
-		Headless: b.headless,
+		Running:   b.running,
+		Headless:  b.headless,
+		Connected: b.connected,
 	}
 
 	if !b.running {

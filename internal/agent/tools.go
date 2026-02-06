@@ -414,6 +414,16 @@ func executeWebFetch(ctx context.Context, url string) string {
 
 // === BROWSER AUTOMATION ===
 
+func executeBrowserStart(ctx context.Context, args map[string]any) string {
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = args
+	result, err := tools.BrowserStart(ctx, req)
+	if err != nil {
+		return "Error: " + err.Error()
+	}
+	return extractText(result)
+}
+
 func executeBrowserNavigate(ctx context.Context, url string) string {
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = map[string]interface{}{"url": url}
@@ -468,6 +478,16 @@ func executeBrowserExecuteJS(ctx context.Context, script string) string {
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = map[string]interface{}{"script": script}
 	result, err := tools.BrowserExecuteJS(ctx, req)
+	if err != nil {
+		return "Error: " + err.Error()
+	}
+	return extractText(result)
+}
+
+func executeBrowserClickAll(ctx context.Context, args map[string]any) string {
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = args
+	result, err := tools.BrowserClickAll(ctx, req)
 	if err != nil {
 		return "Error: " + err.Error()
 	}

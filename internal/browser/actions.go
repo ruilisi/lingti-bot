@@ -116,6 +116,33 @@ func Hover(page *rod.Page, b *Browser, ref int) error {
 	return el.Hover()
 }
 
+// ClickAll clicks every element matching the CSS selector with a delay between each.
+// Returns the number of elements successfully clicked.
+func ClickAll(page *rod.Page, selector string, delay time.Duration) (int, error) {
+	elements, err := page.Elements(selector)
+	if err != nil {
+		return 0, fmt.Errorf("failed to find elements matching %q: %w", selector, err)
+	}
+
+	clicked := 0
+	for _, el := range elements {
+		_ = el.ScrollIntoView()
+		time.Sleep(200 * time.Millisecond)
+
+		if err := el.Click(proto.InputMouseButtonLeft, 1); err != nil {
+			// Skip unclickable elements (hidden, covered, etc.)
+			continue
+		}
+		clicked++
+
+		if delay > 0 {
+			time.Sleep(delay)
+		}
+	}
+
+	return clicked, nil
+}
+
 // resolveRef looks up a ref number in the browser's ref map and returns the corresponding element.
 func resolveRef(page *rod.Page, b *Browser, ref int) (*rod.Element, error) {
 	entry, ok := b.GetRef(ref)

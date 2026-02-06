@@ -312,18 +312,20 @@ func (a *Agent) HandleMessage(ctx context.Context, msg router.Message) (router.R
 - music_search: Search and play
 
 ### Browser Automation (snapshot-then-act pattern)
-- browser_navigate: Navigate to a URL (auto-starts headed Chrome)
+- browser_start: Start new browser or connect to existing Chrome via cdp_url (e.g. "127.0.0.1:9222")
+- browser_navigate: Navigate to a URL (auto-connects to Chrome on port 9222 if available, otherwise launches new)
 - browser_snapshot: Capture accessibility tree with numbered refs
 - browser_click: Click an element by ref number
 - browser_type: Type text into element by ref number (optional submit with Enter)
 - browser_press: Press keyboard key (Enter, Tab, Escape, etc.)
 - browser_execute_js: Run JavaScript on the page (dismiss modals, extract data, etc.)
+- browser_click_all: Click ALL elements matching a CSS selector with delay (batch like/follow)
 - browser_screenshot: Take page screenshot
 - browser_tabs: List all open tabs
 - browser_tab_open: Open new tab
 - browser_tab_close: Close a tab
 - browser_status: Check browser state
-- browser_stop: Close browser
+- browser_stop: Close browser (or disconnect from external Chrome)
 
 ## Browser Automation Rules
 You MUST follow the **snapshot-then-act** pattern for ALL browser interactions:
@@ -864,8 +866,20 @@ func (a *Agent) buildToolsList() []Tool {
 
 		// === BROWSER AUTOMATION ===
 		{
+			Name:        "browser_start",
+			Description: "Start a new browser or connect to an existing Chrome. Use cdp_url to attach to a Chrome launched with --remote-debugging-port (e.g. \"127.0.0.1:9222\"). Without cdp_url, launches a new Chrome instance.",
+			InputSchema: jsonSchema(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"cdp_url":  map[string]string{"type": "string", "description": "CDP address of existing Chrome (e.g. 127.0.0.1:9222). Chrome must be started with --remote-debugging-port flag."},
+					"headless": map[string]string{"type": "boolean", "description": "Launch in headless mode (default: false, ignored when using cdp_url)"},
+					"url":      map[string]string{"type": "string", "description": "Initial URL to navigate to"},
+				},
+			}),
+		},
+		{
 			Name:        "browser_navigate",
-			Description: "Navigate to a URL in the browser. Auto-starts headless browser if not running. Always navigate to the base site URL first, then use snapshot+click/type to interact with page elements step by step.",
+			Description: "Navigate to a URL in the browser. Auto-starts browser if not running (connects to Chrome on port 9222 if available, otherwise launches new). Always navigate to the base site URL first, then use snapshot+click/type to interact with page elements step by step.",
 			InputSchema: jsonSchema(map[string]any{
 				"type":       "object",
 				"properties": map[string]any{"url": map[string]string{"type": "string", "description": "URL to navigate to"}},
@@ -915,6 +929,18 @@ func (a *Agent) buildToolsList() []Tool {
 				"type":       "object",
 				"properties": map[string]any{"script": map[string]string{"type": "string", "description": "JavaScript code to execute in page context"}},
 				"required":   []string{"script"},
+			}),
+		},
+		{
+			Name:        "browser_click_all",
+			Description: "Click ALL elements matching a CSS selector (e.g. '.like-btn', '#follow'). Uses real mouse clicks with configurable delay between each. Useful for batch-liking, batch-following, etc.",
+			InputSchema: jsonSchema(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"selector": map[string]string{"type": "string", "description": "CSS selector for elements to click (e.g. '.like-lottie')"},
+					"delay_ms": map[string]string{"type": "number", "description": "Milliseconds to wait between clicks (default: 500)"},
+				},
+				"required": []string{"selector"},
 			}),
 		},
 		{
@@ -1209,6 +1235,8 @@ func callToolDirect(ctx context.Context, name string, args map[string]any) strin
 		return executeGitHubRepoView(ctx)
 
 	// Browser automation
+	case "browser_start":
+		return executeBrowserStart(ctx, args)
 	case "browser_navigate":
 		url := ""
 		if u, ok := args["url"].(string); ok {
@@ -1249,6 +1277,8 @@ func callToolDirect(ctx context.Context, name string, args map[string]any) strin
 			script = s
 		}
 		return executeBrowserExecuteJS(ctx, script)
+	case "browser_click_all":
+		return executeBrowserClickAll(ctx, args)
 	case "browser_screenshot":
 		return executeBrowserScreenshot(ctx, args)
 	case "browser_tabs":

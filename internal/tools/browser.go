@@ -14,7 +14,7 @@ import (
 
 )
 
-// BrowserStart launches a browser instance.
+// BrowserStart launches a browser instance or connects to an existing Chrome.
 func BrowserStart(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	opts := browser.StartOptions{
 		Headless: false,
@@ -29,28 +29,40 @@ func BrowserStart(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResu
 	if p, ok := req.Params.Arguments["executable_path"].(string); ok {
 		opts.ExecutablePath = p
 	}
+	if c, ok := req.Params.Arguments["cdp_url"].(string); ok {
+		opts.ConnectURL = c
+	}
 
 	b := browser.Instance()
 	if err := b.Start(opts); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to start browser: %v", err)), nil
 	}
 
-	mode := "headless"
-	if !opts.Headless {
-		mode = "headed"
+	var msg string
+	if opts.ConnectURL != "" {
+		msg = fmt.Sprintf("Connected to existing Chrome at %s", opts.ConnectURL)
+	} else {
+		mode := "headless"
+		if !opts.Headless {
+			mode = "headed"
+		}
+		msg = fmt.Sprintf("Browser started (%s)", mode)
 	}
-	msg := fmt.Sprintf("Browser started (%s)", mode)
 	if opts.URL != "" {
 		msg += fmt.Sprintf(", navigated to %s", opts.URL)
 	}
 	return mcp.NewToolResultText(msg), nil
 }
 
-// BrowserStop closes the browser.
+// BrowserStop closes the browser or disconnects from external Chrome.
 func BrowserStop(_ context.Context, _ mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	b := browser.Instance()
+	wasConnected := b.IsConnected()
 	if err := b.Stop(); err != nil {
 		return mcp.NewToolResultError(fmt.Sprintf("failed to stop browser: %v", err)), nil
+	}
+	if wasConnected {
+		return mcp.NewToolResultText("Disconnected from browser (Chrome is still running)"), nil
 	}
 	return mcp.NewToolResultText("Browser stopped"), nil
 }
@@ -281,6 +293,32 @@ func BrowserExecuteJS(_ context.Context, req mcp.CallToolRequest) (*mcp.CallTool
 	}
 
 	return mcp.NewToolResultText(result), nil
+}
+
+// BrowserClickAll clicks all elements matching a CSS selector with delay.
+func BrowserClickAll(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	selector, ok := req.Params.Arguments["selector"].(string)
+	if !ok || selector == "" {
+		return mcp.NewToolResultError("selector is required (CSS selector)"), nil
+	}
+
+	delay := 500 * time.Millisecond
+	if d, ok := req.Params.Arguments["delay_ms"].(float64); ok && d > 0 {
+		delay = time.Duration(d) * time.Millisecond
+	}
+
+	b := browser.Instance()
+	page, err := b.ActivePage()
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to get page: %v", err)), nil
+	}
+
+	count, err := browser.ClickAll(page, selector, delay)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to click elements: %v", err)), nil
+	}
+
+	return mcp.NewToolResultText(fmt.Sprintf("Clicked %d elements matching %q", count, selector)), nil
 }
 
 // BrowserTabs lists all open tabs.
