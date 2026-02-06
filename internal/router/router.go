@@ -2,6 +2,7 @@ package router
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/pltanton/lingti-bot/internal/logger"
@@ -105,6 +106,14 @@ func (r *Router) handleMessage(msg Message) {
 		}
 		if err := platform.Send(ctx, msg.ChannelID, resp); err != nil {
 			logger.Error("[Router] Error sending response: %v", err)
+			// Try to notify the user about the error in chat
+			errResp := Response{
+				Text:     fmt.Sprintf("[Error] %v", err),
+				ThreadID: resp.ThreadID,
+			}
+			if notifyErr := platform.Send(ctx, msg.ChannelID, errResp); notifyErr != nil {
+				logger.Error("[Router] Failed to send error notification: %v", notifyErr)
+			}
 		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
@@ -147,24 +148,38 @@ func (p *Platform) Send(ctx context.Context, userID string, resp router.Response
 		}
 	}
 
-	// Send file attachments
+	// Send file attachments — notify user on per-file errors and continue
+	var failCount int
 	for _, file := range resp.Files {
 		mediaType := file.MediaType
 		if mediaType == "" {
 			mediaType = "file"
 		}
 
+		name := file.Name
+		if name == "" {
+			name = filepath.Base(file.Path)
+		}
+
 		mediaID, err := p.UploadMedia(file.Path, mediaType)
 		if err != nil {
 			logger.Error("[WeCom] Failed to upload %s: %v", file.Path, err)
-			return fmt.Errorf("failed to upload file %s: %w", file.Path, err)
+			_ = p.sendTextMessage(userID, fmt.Sprintf("[Error] Failed to send file \"%s\": %v", name, err))
+			failCount++
+			continue
 		}
 
 		if err := p.SendMediaMessage(userID, mediaID, mediaType); err != nil {
-			return fmt.Errorf("failed to send file %s: %w", file.Path, err)
+			logger.Error("[WeCom] Failed to send media %s: %v", file.Path, err)
+			_ = p.sendTextMessage(userID, fmt.Sprintf("[Error] Failed to send file \"%s\": %v", name, err))
+			failCount++
+			continue
 		}
 	}
 
+	if failCount > 0 {
+		return fmt.Errorf("failed to send %d file(s)", failCount)
+	}
 	return nil
 }
 

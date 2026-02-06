@@ -10,31 +10,41 @@
 
 > **为什么叫"灵小缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵小缇同样敏捷高效，是你忠实的 AI 助手。
 
-<table>
-<tr>
-<td width="33%"><img src="docs/images/demo-chat-1.png" alt="智能助手" /></td>
-<td width="33%"><img src="docs/images/demo-chat-2.png" alt="文件管理" /></td>
-<td width="33%"><img src="docs/images/demo-chat-3.png" alt="信息搜索" /></td>
-</tr>
-<tr>
-<td align="center"><sub>💬 智能对话</sub></td>
-<td align="center"><sub>📁 文件管理</sub></td>
-<td align="center"><sub>🔍 信息搜索</sub></td>
-</tr>
-</table>
-
-<details>
-<summary>📺 <b>后台运行演示</b> — <code>make && dist/lingti-bot router</code></summary>
-<br>
-<img src="docs/images/demo-terminal.png" alt="Terminal Demo" />
-<p><sub>克隆代码后直接编译运行，配合 DeepSeek 模型，实时处理钉钉消息</sub></p>
-</details>
-
 ## 安装
 
 ```bash
 curl -fsSL https://cli.lingti.com/install.sh | bash -s -- --bot
 ```
+
+## 样例
+### 智能对话、文件管理、信息检索
+<table>
+<tr>
+<td width="33%"><img src="docs/images/demo-chat-1.png" alt="智能助手" /></td>
+<td width="33%"><img src="docs/images/demo-chat-2.png" alt="企业微信文件传输" /></td>
+<td width="33%"><img src="docs/images/demo-chat-3.png" alt="信息搜索" /></td>
+</tr>
+<tr>
+<td align="center"><sub>💬 智能对话</sub></td>
+<td align="center"><sub>📁 企微文件传输</sub></td>
+<td align="center"><sub>🔍 信息搜索</sub></td>
+</tr>
+</table>
+
+<summary>📺 <b>后台运行演示</b> — <code>make && dist/lingti-bot router</code></summary>
+<br>
+<img src="docs/images/demo-terminal.png" alt="Terminal Demo" />
+<p><sub>克隆代码后直接编译运行，配合 DeepSeek 模型，实时处理钉钉消息</sub></p>
+
+### 企业微信 AI 文件助手
+
+> 用自然语言管理和传输文件 — 就像跟同事说话一样简单
+
+<p align="center">
+<img src="docs/images/wecom-file-transfer.png" alt="企业微信 AI 文件传输" width="720" />
+</p>
+
+直接在企业微信中用自然语言浏览、查找、传输电脑上的文件。无需远程桌面，无需 U 盘，对 AI 说一句话即可。
 
 ## 为什么选择 lingti-bot？
 
@@ -135,7 +145,7 @@ make build
 
 **云中继优势：** 无需公网服务器、无需域名备案、无需 HTTPS 证书、无需防火墙配置，5 分钟完成接入。
 
-### MCP 工具集 — 60+ 本地系统工具
+### MCP 工具集 — 70+ 本地系统工具
 
 覆盖日常工作的方方面面，让 AI 成为你的全能助手。
 
@@ -157,6 +167,7 @@ make build
 | **音乐控制** | 7 | 播放、暂停、切歌、音量、搜索 (macOS) |
 | **Git** | 4 | 状态、日志、差异、分支 |
 | **GitHub** | 6 | PR 列表/详情、Issue 管理、仓库信息 |
+| **浏览器自动化** | 12 | 快照、点击、输入、截图、标签页管理 |
 
 ### 智能对话 — 多轮记忆，自然交流
 
@@ -192,7 +203,7 @@ make build
 |------|------|------|
 | **MCP Server** | 标准 MCP 协议服务器 | 兼容 Claude Desktop、Cursor、Windsurf 等所有 MCP 客户端 |
 | **多平台消息网关** | 消息平台集成 | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
-| **MCP 工具集** | 60+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
+| **MCP 工具集** | 70+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
 | **智能对话** | 多轮对话与记忆 | 上下文记忆、多 AI 后端（Claude/DeepSeek/Kimi/MiniMax） |
 | **语音交互** | 语音输入/输出 | 本地 whisper-cpp、OpenAI、ElevenLabs 多引擎支持 |
 
@@ -349,6 +360,7 @@ lingti-bot router \
                        |    MCP Tools      |
                        | Files, Shell, Net |
                        | System, Calendar  |
+                       | Browser Automation|
                        +-------------------+
                                  |
             +--------------------+--------------------+
@@ -464,13 +476,14 @@ export FEISHU_APP_SECRET="..."
 - [Slack 集成指南](docs/slack-integration.md) - 完整的 Slack 应用配置教程
 - [飞书集成指南](docs/feishu-integration.md) - 飞书/Lark 应用配置教程
 - [企业微信集成指南](docs/wecom-integration.md) - 企业微信应用配置教程
+- [浏览器自动化指南](docs/browser-automation.md) - 快照-操作模式的浏览器控制
 - [OpenClaw 技术特性对比](docs/openclaw-feature-comparison.md) - 详细功能差异分析
 
 ---
 
 ## MCP 工具集
 
-灵小缇提供 **60+ MCP 工具**，覆盖日常工作的方方面面。
+灵小缇提供 **70+ MCP 工具**，覆盖日常工作的方方面面。包含全新的[浏览器自动化](docs/browser-automation.md)能力。
 
 ### 工具分类
 
@@ -492,6 +505,7 @@ export FEISHU_APP_SECRET="..."
 | 音乐控制 (macOS) | 7 | 播放、暂停、切歌、音量 |
 | Git | 4 | 状态、日志、差异、分支 |
 | GitHub | 6 | PR、Issue、仓库信息 |
+| 浏览器自动化 | 12 | 快照、点击、输入、截图、标签页 |
 
 ### 文件操作
 
@@ -637,6 +651,27 @@ export FEISHU_APP_SECRET="..."
 | `github_issue_create` | 创建新 Issue |
 | `github_repo_view` | 查看仓库信息 |
 
+### 浏览器自动化
+
+基于 [go-rod](https://github.com/go-rod/rod) 的纯 Go 浏览器自动化，采用**快照-操作（Snapshot-then-Act）**模式。详细文档：[浏览器自动化指南](docs/browser-automation.md)
+
+| 工具 | 功能 |
+|------|------|
+| `browser_start` | 启动浏览器（支持无头模式） |
+| `browser_stop` | 关闭浏览器 |
+| `browser_status` | 查看浏览器状态 |
+| `browser_navigate` | 导航到指定 URL |
+| `browser_snapshot` | 获取页面无障碍快照（带编号 ref） |
+| `browser_screenshot` | 截取页面截图 |
+| `browser_click` | 点击元素（按 ref 编号） |
+| `browser_type` | 向元素输入文本（按 ref 编号） |
+| `browser_press` | 按下键盘按键 |
+| `browser_tabs` | 列出所有标签页 |
+| `browser_tab_open` | 打开新标签页 |
+| `browser_tab_close` | 关闭标签页 |
+
+**使用流程：** `browser_snapshot` 获取编号 → `browser_click`/`browser_type` 操作元素 → 页面变化后重新 `browser_snapshot`
+
 ### 其他
 
 | 工具 | 功能 |
@@ -778,11 +813,13 @@ make build  # 或: make darwin-arm64 / make linux-amd64
 "搜索所有包含'周报'的日程"
 ```
 
-### 文件操作
+### 文件操作与传输
 
 ```
 "列出桌面上的所有文件"
 "读取 ~/Documents/notes.txt 的内容"
+"将 ~/Desktop/报告.pdf 发送给我"
+"把 Documents 里的产品介绍发给我"
 "桌面上超过30天没动过的文件有哪些？"
 "帮我把这些旧文件移到废纸篓"
 ```
@@ -841,6 +878,11 @@ lingti-bot/
 │   ├── mcp/
 │   │   └── server.go       # MCP 服务器实现
 │   │
+│   ├── browser/            # 浏览器自动化引擎
+│   │   ├── browser.go      # 浏览器生命周期管理
+│   │   ├── snapshot.go     # 无障碍树快照与 ref 映射
+│   │   └── actions.go      # 元素交互（点击、输入、悬停）
+│   │
 │   ├── tools/              # MCP 工具实现
 │   │   ├── filesystem.go   # 文件读写、列表、搜索
 │   │   ├── shell.go        # Shell 命令执行
@@ -856,6 +898,7 @@ lingti-bot/
 │   │   ├── clipboard.go    # 剪贴板读写
 │   │   ├── notification.go # 系统通知
 │   │   ├── screenshot.go   # 屏幕截图
+│   │   ├── browser.go      # 浏览器自动化工具（12个）
 │   │   └── music.go        # 音乐控制（Spotify/Apple Music）
 │   │
 │   ├── router/
