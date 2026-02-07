@@ -15,9 +15,10 @@ var serveCmd = &cobra.Command{
 	Long:  `Start the MCP server and listen for requests via stdio.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		s := mcp.NewServer()
+		defer s.Stop()
 
 		// Serve over stdio (default MCP transport)
-		if err := server.ServeStdio(s); err != nil {
+		if err := server.ServeStdio(s.GetMCPServer()); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}

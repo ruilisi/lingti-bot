@@ -12,12 +12,12 @@
 - 🚀 **零依赖部署** — 单个 30MB 二进制文件，无需 Node.js/Python 运行时，`scp` 即用
 - ☁️ **云中继加持** — 无需公网服务器、域名备案、HTTPS 证书，5 分钟接入企业微信/微信公众号
 - 🤖 **浏览器自动化** — 内置 CDP 协议控制，快照-操作模式，无需 Puppeteer/Playwright 安装
-- 🛠️ **70+ MCP 工具** — 覆盖文件、Shell、系统、网络、日历、Git、GitHub 等全场景
+- 🛠️ **75+ MCP 工具** — 覆盖文件、Shell、系统、网络、日历、Git、GitHub 等全场景
 - 🌏 **中国平台原生支持** — 钉钉、飞书、企业微信、微信公众号开箱即用
 - 🔌 **嵌入式友好** — 可编译到 ARM/MIPS，轻松部署到树莓派、路由器、NAS
 - 🧠 **多 AI 后端** — 集成 Claude、DeepSeek、Kimi、MiniMax、Gemini 等，按需切换
 
-支持钉钉、飞书、企业微信、微信公众号、Slack、Telegram、Discord 等平台秒接入，兼具 [OpenClaw](docs/openclaw-reference.md) 式灵活接入。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
+支持钉钉、飞书、企业微信、微信公众号、Slack、Telegram、Discord 等平台接入，既可通过**云中继 5 分钟秒接**，也可 [OpenClaw](docs/openclaw-reference.md) 式**传统自建部署**。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
 
 > **为什么叫"灵小缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵小缇同样敏捷高效，是你忠实的 AI 助手。
 
@@ -156,7 +156,7 @@ make build
 
 **云中继优势：** 无需公网服务器、无需域名备案、无需 HTTPS 证书、无需防火墙配置，5 分钟完成接入。
 
-### MCP 工具集 — 70+ 本地系统工具
+### MCP 工具集 — 75+ 本地系统工具
 
 覆盖日常工作的方方面面，让 AI 成为你的全能助手。
 
@@ -179,6 +179,79 @@ make build
 | **Git** | 4 | 状态、日志、差异、分支 |
 | **GitHub** | 6 | PR 列表/详情、Issue 管理、仓库信息 |
 | **浏览器自动化** | 12 | 快照、点击、输入、截图、标签页管理 |
+| **定时任务** | 5 | 创建、列表、删除、暂停、恢复计划任务 |
+
+### 定时任务 — 自动化你的工作流
+
+使用标准 Cron 表达式调度周期性任务，实现真正的无人值守自动化。
+
+**核心功能：**
+- 🕐 支持标准 Cron 表达式（分、时、日、月、周）
+- 💾 任务持久化，重启后自动恢复
+- 🔄 可暂停/恢复任务执行
+- 📊 记录执行状态和错误信息
+- 🛠️ 可调用任意 MCP 工具
+
+**快速示例：**
+
+```bash
+# 每天凌晨 2 点执行备份
+cron_create(
+  name="daily-backup",
+  schedule="0 2 * * *",
+  tool="shell_execute",
+  arguments={"command": "tar -czf ~/backup-$(date +%Y%m%d).tar.gz ~/data"}
+)
+
+# 每 15 分钟检查磁盘空间
+cron_create(
+  name="disk-check",
+  schedule="*/15 * * * *",
+  tool="disk_usage",
+  arguments={"path": "/"}
+)
+
+# 工作日上午 9 点提醒
+cron_create(
+  name="morning-standup",
+  schedule="0 9 * * 1-5",
+  tool="notification_send",
+  arguments={"title": "站会提醒", "message": "该开始今天的站会了！"}
+)
+
+# 查看所有定时任务
+cron_list()
+
+# 暂停任务
+cron_pause(id="job-id-here")
+
+# 恢复任务
+cron_resume(id="job-id-here")
+
+# 删除任务
+cron_delete(id="job-id-here")
+```
+
+**Cron 表达式格式：**
+
+```
+* * * * *
+│ │ │ │ │
+│ │ │ │ └─ 星期 (0-6, 0=周日)
+│ │ │ └─── 月份 (1-12)
+│ │ └───── 日期 (1-31)
+│ └─────── 小时 (0-23)
+└───────── 分钟 (0-59)
+```
+
+**常用表达式示例：**
+- `0 * * * *` - 每小时整点执行
+- `*/15 * * * *` - 每 15 分钟执行
+- `0 9 * * 1-5` - 工作日上午 9 点
+- `0 0 1 * *` - 每月 1 号零点
+- `30 8-18 * * *` - 每天 8:30 到 18:30 每小时执行
+
+任务配置保存在 `~/.lingti/crons.json`，重启 MCP 服务后自动恢复运行。
 
 ### 智能对话 — 多轮记忆，自然交流
 
@@ -214,7 +287,7 @@ make build
 |------|------|------|
 | **MCP Server** | 标准 MCP 协议服务器 | 兼容 Claude Desktop、Cursor、Windsurf 等所有 MCP 客户端 |
 | **多平台消息网关** | 消息平台集成 | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
-| **MCP 工具集** | 70+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
+| **MCP 工具集** | 75+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
 | **智能对话** | 多轮对话与记忆 | 上下文记忆、多 AI 后端（Claude/DeepSeek/Kimi/MiniMax） |
 | **语音交互** | 语音输入/输出 | 本地 whisper-cpp、OpenAI、ElevenLabs 多引擎支持 |
 
@@ -494,7 +567,7 @@ export FEISHU_APP_SECRET="..."
 
 ## MCP 工具集
 
-灵小缇提供 **70+ MCP 工具**，覆盖日常工作的方方面面。包含全新的[浏览器自动化](docs/browser-automation.md)能力。
+灵小缇提供 **75+ MCP 工具**，覆盖日常工作的方方面面。包含全新的[浏览器自动化](docs/browser-automation.md)能力。
 
 ### 工具分类
 
