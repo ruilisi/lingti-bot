@@ -62,7 +62,7 @@ Voice message transcription (optional):
   - VOICE_STT_API_KEY: API key for cloud STT provider
 
 Required environment variables or flags:
-  - AI_PROVIDER: AI provider (claude, deepseek, kimi) default: claude
+  - AI_PROVIDER: AI provider (claude, deepseek, kimi, qwen) default: claude
   - AI_API_KEY: API Key for the AI provider
   - AI_BASE_URL: Custom API base URL (optional)
   - AI_MODEL: Model name (optional)`,
@@ -86,7 +86,7 @@ func init() {
 	routerCmd.Flags().IntVar(&wecomPort, "wecom-port", 0, "WeCom Callback Port (or WECOM_PORT env, default: 8080)")
 	routerCmd.Flags().StringVar(&dingtalkClientID, "dingtalk-client-id", "", "DingTalk AppKey (or DINGTALK_CLIENT_ID env)")
 	routerCmd.Flags().StringVar(&dingtalkClientSecret, "dingtalk-client-secret", "", "DingTalk AppSecret (or DINGTALK_CLIENT_SECRET env)")
-	routerCmd.Flags().StringVar(&aiProvider, "provider", "", "AI provider: claude or deepseek (or AI_PROVIDER env)")
+	routerCmd.Flags().StringVar(&aiProvider, "provider", "", "AI provider: claude, deepseek, kimi, qwen (or AI_PROVIDER env)")
 	routerCmd.Flags().StringVar(&aiAPIKey, "api-key", "", "AI API Key (or AI_API_KEY env)")
 	routerCmd.Flags().StringVar(&aiBaseURL, "base-url", "", "Custom API base URL (or AI_BASE_URL env)")
 	routerCmd.Flags().StringVar(&aiModel, "model", "", "Model name (or AI_MODEL env)")

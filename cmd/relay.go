@@ -82,7 +82,7 @@ Environment variables:
   RELAY_PLATFORM       Alternative to --platform
   RELAY_SERVER_URL     Custom WebSocket server URL
   RELAY_WEBHOOK_URL    Custom webhook URL
-  AI_PROVIDER          AI provider: claude or deepseek (default: claude)
+  AI_PROVIDER          AI provider: claude, deepseek, kimi, qwen (default: claude)
   AI_API_KEY           AI API key
   AI_BASE_URL          Custom API base URL
   AI_MODEL             Model name`,
@@ -96,7 +96,7 @@ func init() {
 	relayCmd.Flags().StringVar(&relayPlatform, "platform", "", "Platform: feishu, slack, wechat, or wecom (required, or RELAY_PLATFORM env)")
 	relayCmd.Flags().StringVar(&relayServerURL, "server", "", "WebSocket URL (default: wss://bot.lingti.com/ws, or RELAY_SERVER_URL env)")
 	relayCmd.Flags().StringVar(&relayWebhookURL, "webhook", "", "Webhook URL (default: https://bot.lingti.com/webhook, or RELAY_WEBHOOK_URL env)")
-	relayCmd.Flags().StringVar(&relayAIProvider, "provider", "", "AI provider: claude or deepseek (or AI_PROVIDER env)")
+	relayCmd.Flags().StringVar(&relayAIProvider, "provider", "", "AI provider: claude, deepseek, kimi, qwen (or AI_PROVIDER env)")
 	relayCmd.Flags().StringVar(&relayAPIKey, "api-key", "", "AI API key (or AI_API_KEY env)")
 	relayCmd.Flags().StringVar(&relayBaseURL, "base-url", "", "Custom API base URL (or AI_BASE_URL env)")
 	relayCmd.Flags().StringVar(&relayModel, "model", "", "Model name (or AI_MODEL env)")

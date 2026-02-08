@@ -61,6 +61,12 @@ func createProvider(cfg Config) (Provider, error) {
 			BaseURL: cfg.BaseURL,
 			Model:   cfg.Model,
 		})
+	case "qwen", "qianwen", "tongyi":
+		return NewQwenProvider(QwenConfig{
+			APIKey:  cfg.APIKey,
+			BaseURL: cfg.BaseURL,
+			Model:   cfg.Model,
+		})
 	case "claude", "anthropic", "":
 		return NewClaudeProvider(ClaudeConfig{
 			APIKey:  cfg.APIKey,
@@ -68,7 +74,7 @@ func createProvider(cfg Config) (Provider, error) {
 			Model:   cfg.Model,
 		})
 	default:
-		return nil, fmt.Errorf("unknown provider: %s (supported: claude, deepseek, kimi)", cfg.Provider)
+		return nil, fmt.Errorf("unknown provider: %s (supported: claude, deepseek, kimi, qwen)", cfg.Provider)
 	}
 }
 

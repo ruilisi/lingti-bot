@@ -220,12 +220,30 @@ Task configuration saved to `~/.lingti/crons.json`, auto-resume after MCP servic
 
 Support multiple AI services, switch on demand:
 
-| AI Service | Environment Variable |
-|------------|---------------------|
-| **Claude** (Anthropic) | `ANTHROPIC_API_KEY` |
-| **Kimi** (Moonshot) | `KIMI_API_KEY` |
-| **DeepSeek** | `DEEPSEEK_API_KEY` |
-| **MiniMax** | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL` |
+| AI Service | Environment Variable | Provider Parameter | Default Model |
+|------------|---------------------|-------------------|---------------|
+| **Claude** (Anthropic) | `ANTHROPIC_API_KEY` | `claude` / `anthropic` | claude-sonnet-4.5 |
+| **Kimi** (Moonshot) | `KIMI_API_KEY` | `kimi` / `moonshot` | moonshot-v1-8k |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | `deepseek` | deepseek-chat |
+| **Qwen** (Qianwen/通义千问) | `QWEN_API_KEY` | `qwen` / `qianwen` / `tongyi` | qwen-plus |
+
+**Qwen Usage Example:**
+
+```bash
+# Using environment variable
+export QWEN_API_KEY="sk-your-qwen-api-key"
+lingti-bot router --provider qwen
+
+# Using command line parameters
+lingti-bot router \
+  --provider qwen \
+  --api-key "sk-your-qwen-api-key" \
+  --model "qwen-plus"
+
+# Available models: qwen-plus (recommended), qwen-turbo, qwen-max, qwen-long
+```
+
+Get Qwen API Key: Visit [Alibaba Cloud Bailian Platform](https://bailian.console.aliyun.com/) to create a DashScope API Key.
 
 ## Documentation
 

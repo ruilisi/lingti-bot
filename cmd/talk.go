@@ -51,7 +51,7 @@ func init() {
 	talkCmd.Flags().BoolVar(&continuousMode, "continuous", false, "Keep listening after each response")
 	talkCmd.Flags().BoolVar(&briefVoice, "brief", true, "Brief voice mode: print full text, speak only notification")
 	talkCmd.Flags().StringVar(&defaultVoice, "voice", "", "Default voice name")
-	talkCmd.Flags().StringVar(&aiProvider, "provider", "", "AI provider: claude, deepseek, kimi (or AI_PROVIDER env)")
+	talkCmd.Flags().StringVar(&aiProvider, "provider", "", "AI provider: claude, deepseek, kimi, qwen (or AI_PROVIDER env)")
 	talkCmd.Flags().StringVar(&aiAPIKey, "api-key", "", "AI API Key (or AI_API_KEY env)")
 	talkCmd.Flags().StringVar(&aiBaseURL, "base-url", "", "AI API base URL (or AI_BASE_URL env)")
 	talkCmd.Flags().StringVar(&aiModel, "model", "", "Model name (or AI_MODEL env)")

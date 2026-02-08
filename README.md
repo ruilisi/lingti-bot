@@ -551,12 +551,30 @@ export FEISHU_APP_SECRET="..."
 
 支持多种 AI 服务，按需切换：
 
-| AI 服务 | 环境变量 |
-|---------|----------|
-| **Claude** (Anthropic) | `ANTHROPIC_API_KEY` |
-| **Kimi** (月之暗面) | `KIMI_API_KEY` |
-| **DeepSeek** | `DEEPSEEK_API_KEY` |
-| **MiniMax** | `ANTHROPIC_API_KEY`、`ANTHROPIC_BASE_URL` |
+| AI 服务 | 环境变量 | Provider 参数 | 默认模型 |
+|---------|----------|--------------|----------|
+| **Claude** (Anthropic) | `ANTHROPIC_API_KEY` | `claude` / `anthropic` | claude-sonnet-4.5 |
+| **Kimi** (月之暗面) | `KIMI_API_KEY` | `kimi` / `moonshot` | moonshot-v1-8k |
+| **DeepSeek** | `DEEPSEEK_API_KEY` | `deepseek` | deepseek-chat |
+| **Qwen** (通义千问) | `QWEN_API_KEY` | `qwen` / `qianwen` / `tongyi` | qwen-plus |
+
+**千问使用示例：**
+
+```bash
+# 使用环境变量
+export QWEN_API_KEY="sk-your-qwen-api-key"
+lingti-bot router --provider qwen
+
+# 使用命令行参数
+lingti-bot router \
+  --provider qwen \
+  --api-key "sk-your-qwen-api-key" \
+  --model "qwen-plus"
+
+# 可用模型：qwen-plus（推荐）、qwen-turbo、qwen-max、qwen-long
+```
+
+获取千问 API Key：访问 [阿里云百炼平台](https://bailian.console.aliyun.com/) 创建 DashScope API Key。
 
 ### 详细文档
 
