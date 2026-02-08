@@ -1,3 +1,7 @@
+[English](./README_EN.md) | 中文
+
+---
+
 # lingti-bot (灵小缇) 🐕⚡
 
 > 🐕⚡ **极简至上 效率为王 一次编译 到处执行 极速接入**的 AI Bot
