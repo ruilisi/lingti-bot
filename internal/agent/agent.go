@@ -234,7 +234,7 @@ func (a *Agent) HandleMessage(ctx context.Context, msg router.Message) (router.R
 
 	// Get conversation history
 	history := a.memory.GetHistory(convKey)
-	logger.Debug("[Agent] Conversation key: %s, history messages: %d", convKey, len(history))
+	logger.Trace("[Agent] Conversation key: %s, history messages: %d", convKey, len(history))
 
 	// Create messages with history
 	messages := make([]Message, 0, len(history)+1)
@@ -433,7 +433,7 @@ Current date: %s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir, 
 	)
 
 	// Log response at verbose level
-	logger.Verbose("[Agent] Response: %s", resp.Content)
+	logger.Debug("[Agent] Response: %s", resp.Content)
 
 	return router.Response{Text: resp.Content, Files: pendingFiles}, nil
 }
@@ -1070,9 +1070,9 @@ func (a *Agent) executeTool(ctx context.Context, name string, input json.RawMess
 
 	// Log result at verbose level (truncate if too long)
 	if len(result) > 500 {
-		logger.Verbose("[Agent] Tool %s result: %s... (truncated)", name, result[:500])
+		logger.Debug("[Agent] Tool %s result: %s... (truncated)", name, result[:500])
 	} else {
-		logger.Verbose("[Agent] Tool %s result: %s", name, result)
+		logger.Debug("[Agent] Tool %s result: %s", name, result)
 	}
 
 	return result

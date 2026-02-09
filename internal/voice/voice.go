@@ -192,12 +192,12 @@ func (t *TalkMode) ProcessAudio(ctx context.Context, audio []byte) (string, erro
 	if t.briefVoice {
 		// Only speak brief notification
 		if err := t.Speak(ctx, "已完成"); err != nil {
-			logger.Info("[Voice] TTS failed: %v", err)
+			logger.Warn("[Voice] TTS failed: %v", err)
 		}
 	} else {
 		// Speak full response
 		if err := t.Speak(ctx, response); err != nil {
-			logger.Info("[Voice] TTS failed: %v", err)
+			logger.Warn("[Voice] TTS failed: %v", err)
 		}
 	}
 
@@ -219,14 +219,14 @@ func (t *TalkMode) listenLoop() {
 			// Record audio (platform-specific)
 			audio, err := recordAudio(t.ctx, 5*time.Second)
 			if err != nil {
-				logger.Info("[Voice] Recording failed: %v", err)
+				logger.Warn("[Voice] Recording failed: %v", err)
 				continue
 			}
 
 			if len(audio) > 0 {
 				_, err := t.ProcessAudio(t.ctx, audio)
 				if err != nil {
-					logger.Info("[Voice] Processing failed: %v", err)
+					logger.Warn("[Voice] Processing failed: %v", err)
 				}
 
 				// If not in continuous mode, stop after one interaction

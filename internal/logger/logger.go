@@ -2,7 +2,6 @@ package logger
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"os"
 	"strings"
@@ -13,47 +12,57 @@ import (
 type Level int
 
 const (
-	// LevelSilent shows minimal output
-	LevelSilent Level = iota
-	// LevelInfo shows command execution (default)
+	LevelTrace Level = iota
+	LevelDebug
 	LevelInfo
-	// LevelVerbose shows command results
-	LevelVerbose
-	// LevelVeryVerbose shows debug messages
-	LevelVeryVerbose
+	LevelWarn
+	LevelError
+	LevelFatal
+	LevelPanic
 )
 
 var (
 	currentLevel = LevelInfo
 	mu           sync.RWMutex
 
-	// Loggers for different levels
-	silentLogger      *log.Logger
-	infoLogger        *log.Logger
-	verboseLogger     *log.Logger
-	veryVerboseLogger *log.Logger
+	traceLogger *log.Logger
+	debugLogger *log.Logger
+	infoLogger  *log.Logger
+	warnLogger  *log.Logger
+	errorLogger *log.Logger
+	fatalLogger *log.Logger
+	panicLogger *log.Logger
 )
 
 func init() {
-	silentLogger = log.New(os.Stderr, "", 0)
+	traceLogger = log.New(os.Stderr, "[TRACE] ", log.LstdFlags|log.Lshortfile)
+	debugLogger = log.New(os.Stderr, "[DEBUG] ", log.LstdFlags|log.Lshortfile)
 	infoLogger = log.New(os.Stderr, "", log.LstdFlags)
-	verboseLogger = log.New(os.Stderr, "[VERBOSE] ", log.LstdFlags)
-	veryVerboseLogger = log.New(os.Stderr, "[DEBUG] ", log.LstdFlags|log.Lshortfile)
+	warnLogger = log.New(os.Stderr, "[WARN] ", log.LstdFlags)
+	errorLogger = log.New(os.Stderr, "[ERROR] ", log.LstdFlags)
+	fatalLogger = log.New(os.Stderr, "[FATAL] ", log.LstdFlags)
+	panicLogger = log.New(os.Stderr, "[PANIC] ", log.LstdFlags)
 }
 
 // ParseLevel parses a string into a Level
 func ParseLevel(s string) (Level, error) {
 	switch strings.ToLower(s) {
-	case "silent", "s", "0":
-		return LevelSilent, nil
-	case "info", "i", "1":
+	case "trace":
+		return LevelTrace, nil
+	case "debug":
+		return LevelDebug, nil
+	case "info":
 		return LevelInfo, nil
-	case "verbose", "v", "2":
-		return LevelVerbose, nil
-	case "very-verbose", "vv", "debug", "d", "3":
-		return LevelVeryVerbose, nil
+	case "warn", "warning":
+		return LevelWarn, nil
+	case "error":
+		return LevelError, nil
+	case "fatal":
+		return LevelFatal, nil
+	case "panic":
+		return LevelPanic, nil
 	default:
-		return LevelInfo, fmt.Errorf("unknown log level: %s (use: silent, info, verbose, very-verbose)", s)
+		return LevelInfo, fmt.Errorf("unknown log level: %s (use: trace, debug, info, warn, error, fatal, panic)", s)
 	}
 }
 
@@ -62,13 +71,6 @@ func SetLevel(level Level) {
 	mu.Lock()
 	defer mu.Unlock()
 	currentLevel = level
-
-	// Disable standard log output for silent mode
-	if level == LevelSilent {
-		log.SetOutput(io.Discard)
-	} else {
-		log.SetOutput(os.Stderr)
-	}
 }
 
 // GetLevel returns the current log level
@@ -78,9 +80,26 @@ func GetLevel() Level {
 	return currentLevel
 }
 
-// Silent logs a message at silent level (always shown except errors)
-func Silent(format string, v ...any) {
-	silentLogger.Printf(format, v...)
+// Trace logs a message at trace level
+func Trace(format string, v ...any) {
+	mu.RLock()
+	level := currentLevel
+	mu.RUnlock()
+
+	if level <= LevelTrace {
+		traceLogger.Printf(format, v...)
+	}
+}
+
+// Debug logs a message at debug level
+func Debug(format string, v ...any) {
+	mu.RLock()
+	level := currentLevel
+	mu.RUnlock()
+
+	if level <= LevelDebug {
+		debugLogger.Printf(format, v...)
+	}
 }
 
 // Info logs a message at info level
@@ -89,55 +108,53 @@ func Info(format string, v ...any) {
 	level := currentLevel
 	mu.RUnlock()
 
-	if level >= LevelInfo {
+	if level <= LevelInfo {
 		infoLogger.Printf(format, v...)
 	}
 }
 
-// Verbose logs a message at verbose level
-func Verbose(format string, v ...any) {
+// Warn logs a message at warn level
+func Warn(format string, v ...any) {
 	mu.RLock()
 	level := currentLevel
 	mu.RUnlock()
 
-	if level >= LevelVerbose {
-		verboseLogger.Printf(format, v...)
+	if level <= LevelWarn {
+		warnLogger.Printf(format, v...)
 	}
 }
 
-// Debug logs a message at very-verbose/debug level
-func Debug(format string, v ...any) {
-	mu.RLock()
-	level := currentLevel
-	mu.RUnlock()
-
-	if level >= LevelVeryVerbose {
-		veryVerboseLogger.Printf(format, v...)
-	}
-}
-
-// Error always logs errors regardless of level
+// Error logs a message at error level
 func Error(format string, v ...any) {
-	silentLogger.Printf("[ERROR] "+format, v...)
+	mu.RLock()
+	level := currentLevel
+	mu.RUnlock()
+
+	if level <= LevelError {
+		errorLogger.Printf(format, v...)
+	}
 }
 
-// IsVerbose returns true if verbose logging is enabled
-func IsVerbose() bool {
-	mu.RLock()
-	defer mu.RUnlock()
-	return currentLevel >= LevelVerbose
+// Fatal logs a message at fatal level and exits
+func Fatal(format string, v ...any) {
+	fatalLogger.Fatalf(format, v...)
+}
+
+// Panic logs a message at panic level and panics
+func Panic(format string, v ...any) {
+	panicLogger.Panicf(format, v...)
 }
 
 // IsDebug returns true if debug logging is enabled
 func IsDebug() bool {
 	mu.RLock()
 	defer mu.RUnlock()
-	return currentLevel >= LevelVeryVerbose
+	return currentLevel <= LevelDebug
 }
 
-// IsSilent returns true if silent mode is enabled
-func IsSilent() bool {
+// IsTrace returns true if trace logging is enabled
+func IsTrace() bool {
 	mu.RLock()
 	defer mu.RUnlock()
-	return currentLevel == LevelSilent
+	return currentLevel <= LevelTrace
 }

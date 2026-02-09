@@ -10,7 +10,6 @@ import (
 
 var (
 	logLevel    string
-	debug       bool
 	autoApprove bool
 )
 
@@ -27,11 +26,6 @@ It provides tools for:
   - Process management
   - Network information`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// If --debug is set, override log level to very-verbose
-		if debug {
-			logLevel = "very-verbose"
-		}
-
 		// Parse and set log level
 		level, err := logger.ParseLevel(logLevel)
 		if err != nil {
@@ -44,16 +38,9 @@ It provides tools for:
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&logLevel, "log", "info",
-		"Log level: silent, info, verbose, very-verbose")
-	rootCmd.PersistentFlags().BoolVar(&debug, "debug", false,
-		"Enable debug mode (sets log level to very-verbose and enables browser debug)")
+		"Log level: trace, debug, info, warn, error, fatal, panic")
 	rootCmd.PersistentFlags().BoolVarP(&autoApprove, "yes", "y", false,
 		"Automatically approve all operations without prompting (skip security checks)")
-}
-
-// IsDebug returns true if debug mode is enabled globally
-func IsDebug() bool {
-	return debug
 }
 
 // IsAutoApprove returns true if auto-approve mode is enabled globally

@@ -238,8 +238,8 @@ func runRouter(cmd *cobra.Command, args []string) {
 		}
 	}
 
-	// Check if debug mode is enabled (global flag or env var)
-	debugEnabled := IsDebug()
+	// Check if debug mode is enabled (log level or env var)
+	debugEnabled := logger.IsDebug()
 	if !debugEnabled {
 		if os.Getenv("BROWSER_DEBUG") == "1" || os.Getenv("BROWSER_DEBUG") == "true" {
 			debugEnabled = true
@@ -322,7 +322,7 @@ func runRouter(cmd *cobra.Command, args []string) {
 				APIKey:   voiceSTTAPIKey,
 			})
 			if err != nil {
-				logger.Info("Warning: Failed to create voice transcriber: %v", err)
+				logger.Warn("Failed to create voice transcriber: %v", err)
 			} else {
 				logger.Info("Voice transcription enabled (provider: %s)", voiceSTTProvider)
 			}

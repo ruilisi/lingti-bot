@@ -151,7 +151,7 @@ func runVoice(cmd *cobra.Command, args []string) {
 			Voice:    voiceName,
 		})
 		if err != nil {
-			logger.Verbose("Warning: Failed to create speaker: %v (responses will be text only)", err)
+			logger.Warn("Failed to create speaker: %v (responses will be text only)", err)
 			speakResponse = false
 		}
 	}
@@ -266,7 +266,7 @@ func runVoice(cmd *cobra.Command, args []string) {
 		if speakResponse && speaker != nil {
 			fmt.Println("🔊 Speaking...")
 			if err := speaker.Speak(ctx, response.Text); err != nil {
-				logger.Verbose("Warning: TTS failed: %v", err)
+				logger.Warn("TTS failed: %v", err)
 			}
 		}
 	}

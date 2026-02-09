@@ -179,14 +179,14 @@ func executeFileWrite(ctx context.Context, path string, content string) string {
 
 // executeShell runs the shell_execute tool
 func executeShell(ctx context.Context, command string) string {
-	logger.Verbose("[Shell] Executing: %s", command)
+	logger.Debug("[Shell] Executing: %s", command)
 
 	// Safety check
 	blocked := []string{"rm -rf /", "mkfs", "dd if="}
 	cmdLower := strings.ToLower(command)
 	for _, b := range blocked {
 		if strings.Contains(cmdLower, b) {
-			logger.Verbose("[Shell] Command blocked for safety")
+			logger.Debug("[Shell] Command blocked for safety")
 			return "Command blocked for safety"
 		}
 	}
@@ -216,9 +216,9 @@ func executeShell(ctx context.Context, command string) string {
 
 	// Log result at verbose level (truncate if too long)
 	if len(output) > 500 {
-		logger.Verbose("[Shell] Output: %s... (truncated)", output[:500])
+		logger.Debug("[Shell] Output: %s... (truncated)", output[:500])
 	} else {
-		logger.Verbose("[Shell] Output: %s", output)
+		logger.Debug("[Shell] Output: %s", output)
 	}
 
 	return output

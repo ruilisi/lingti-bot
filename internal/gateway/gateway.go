@@ -288,7 +288,7 @@ func (c *Client) readPump() {
 	c.conn.SetReadLimit(65536)
 	c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 	c.conn.SetPongHandler(func(string) error {
-		logger.Debug("[Gateway] Received pong from client %s", c.ID)
+		logger.Trace("[Gateway] Received pong from client %s", c.ID)
 		c.conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		return nil
 	})
@@ -297,7 +297,7 @@ func (c *Client) readPump() {
 		_, data, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				logger.Debug("[Gateway] Read error: %v", err)
+				logger.Trace("[Gateway] Read error: %v", err)
 			}
 			break
 		}
@@ -347,7 +347,7 @@ func (c *Client) writePump() {
 			}
 
 		case <-ticker.C:
-			logger.Debug("[Gateway] Sending ping to client %s", c.ID)
+			logger.Trace("[Gateway] Sending ping to client %s", c.ID)
 			c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
 				return
@@ -502,7 +502,7 @@ func (c *Client) sendMessage(msg Message) {
 	select {
 	case c.send <- data:
 	default:
-		logger.Debug("[Gateway] Send buffer full for client %s", c.ID)
+		logger.Trace("[Gateway] Send buffer full for client %s", c.ID)
 	}
 }
 

@@ -63,13 +63,13 @@ func (p *Platform) UploadMedia(filePath string, mediaType string) (string, error
 	if err != nil {
 		return "", fmt.Errorf("failed to get access token: %w", err)
 	}
-	logger.Debug("[WeCom] UploadMedia: got access token")
+	logger.Trace("[WeCom] UploadMedia: got access token")
 
 	body, contentType, err := buildMultipartBody(filePath)
 	if err != nil {
 		return "", err
 	}
-	logger.Debug("[WeCom] UploadMedia: built multipart body, size=%d", body.Len())
+	logger.Trace("[WeCom] UploadMedia: built multipart body, size=%d", body.Len())
 
 	url := fmt.Sprintf("%s?access_token=%s&type=%s", uploadMediaURL, token, mediaType)
 	resp, err := http.Post(url, contentType, body)
@@ -82,7 +82,7 @@ func (p *Platform) UploadMedia(filePath string, mediaType string) (string, error
 	if err != nil {
 		return "", fmt.Errorf("failed to read response body: %w", err)
 	}
-	logger.Debug("[WeCom] UploadMedia: response status=%s, body=%s", resp.Status, string(respBody))
+	logger.Trace("[WeCom] UploadMedia: response status=%s, body=%s", resp.Status, string(respBody))
 
 	var result mediaResponse
 	if err := json.Unmarshal(respBody, &result); err != nil {
@@ -256,7 +256,7 @@ func (p *Platform) SendMediaMessage(userID, mediaID, mediaType string) error {
 	if err != nil {
 		return fmt.Errorf("failed to marshal message: %w", err)
 	}
-	logger.Debug("[WeCom] SendMediaMessage: request body=%s", string(body))
+	logger.Trace("[WeCom] SendMediaMessage: request body=%s", string(body))
 
 	url := fmt.Sprintf("%s?access_token=%s", sendMsgURL, token)
 	resp, err := http.Post(url, "application/json", bytes.NewReader(body))
@@ -269,7 +269,7 @@ func (p *Platform) SendMediaMessage(userID, mediaID, mediaType string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
-	logger.Debug("[WeCom] SendMediaMessage: response status=%s, body=%s", resp.Status, string(respBody))
+	logger.Trace("[WeCom] SendMediaMessage: response status=%s, body=%s", resp.Status, string(respBody))
 
 	var result struct {
 		ErrCode int    `json:"errcode"`

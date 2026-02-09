@@ -308,7 +308,7 @@ func (p *Platform) processMessage(plaintext []byte) {
 
 	// Skip event messages
 	if msg.MsgType == "event" {
-		logger.Debug("[WeCom] Ignoring event: %s", msg.Event)
+		logger.Trace("[WeCom] Ignoring event: %s", msg.Event)
 		return
 	}
 
@@ -345,7 +345,7 @@ func (p *Platform) processMessage(plaintext []byte) {
 		routerMsg.Text = "[文件] " + msg.FileName
 		routerMsg.Metadata["file_size"] = msg.FileSize
 	default:
-		logger.Debug("[WeCom] Ignoring message type: %s", msg.MsgType)
+		logger.Trace("[WeCom] Ignoring message type: %s", msg.MsgType)
 		return
 	}
 
@@ -386,7 +386,7 @@ func (p *Platform) refreshToken() error {
 	p.tokenExpiry = time.Now().Add(time.Duration(result.ExpiresIn-300) * time.Second)
 	p.tokenMu.Unlock()
 
-	logger.Debug("[WeCom] Access token refreshed, expires in %d seconds", result.ExpiresIn)
+	logger.Trace("[WeCom] Access token refreshed, expires in %d seconds", result.ExpiresIn)
 	return nil
 }
 

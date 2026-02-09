@@ -233,7 +233,7 @@ func (p *ClaudeProvider) Chat(ctx context.Context, req ChatRequest) (ChatRespons
 			if !isTransientError(lastErr) {
 				break
 			}
-			logger.Info("[Claude] Transient streaming error (attempt %d/%d): %v", attempt+1, streamMaxRetries, lastErr)
+			logger.Warn("[Claude] Transient streaming error (attempt %d/%d): %v", attempt+1, streamMaxRetries, lastErr)
 			select {
 			case <-ctx.Done():
 				return ChatResponse{}, fmt.Errorf("anthropic API error: %w", ctx.Err())

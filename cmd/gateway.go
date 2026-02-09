@@ -152,7 +152,7 @@ func runGateway(cmd *cobra.Command, args []string) {
 
 	go func() {
 		if err := gw.Start(ctx); err != nil {
-			logger.Info("Gateway error: %v", err)
+			logger.Error("Gateway error: %v", err)
 		}
 	}()
 
