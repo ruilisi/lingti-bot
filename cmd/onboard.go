@@ -2,8 +2,11 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -273,6 +276,59 @@ var providers = []providerInfo{
 	{"kimi", "kimi      (Moonshot)", "https://platform.moonshot.cn/", "moonshot-v1-8k"},
 }
 
+// detectClaudeOAuthToken tries to find an existing Claude OAuth token from env vars or macOS Keychain.
+func detectClaudeOAuthToken() string {
+	// 1. Check ANTHROPIC_OAUTH_TOKEN env var
+	if tok := os.Getenv("ANTHROPIC_OAUTH_TOKEN"); tok != "" && strings.HasPrefix(tok, "sk-ant-oat") {
+		return tok
+	}
+
+	// 2. macOS Keychain: Claude Code stores credentials under "Claude Code-credentials"
+	if runtime.GOOS == "darwin" {
+		if tok := readClaudeKeychain(); tok != "" {
+			return tok
+		}
+	}
+
+	// 3. Check ANTHROPIC_API_KEY if it looks like an OAuth token
+	if tok := os.Getenv("ANTHROPIC_API_KEY"); tok != "" && strings.HasPrefix(tok, "sk-ant-oat") {
+		return tok
+	}
+
+	return ""
+}
+
+// detectClaudeAPIKey tries to find an existing Anthropic API key from env vars.
+func detectClaudeAPIKey() string {
+	if key := os.Getenv("ANTHROPIC_API_KEY"); key != "" && strings.HasPrefix(key, "sk-ant-") && !strings.HasPrefix(key, "sk-ant-oat") {
+		return key
+	}
+	return ""
+}
+
+// readClaudeKeychain reads the Claude Code OAuth token from macOS Keychain.
+func readClaudeKeychain() string {
+	out, err := exec.Command("security", "find-generic-password", "-s", "Claude Code-credentials", "-w").Output()
+	if err != nil {
+		return ""
+	}
+
+	var creds struct {
+		ClaudeAiOauth struct {
+			AccessToken string `json:"accessToken"`
+		} `json:"claudeAiOauth"`
+	}
+	if err := json.Unmarshal(out, &creds); err != nil {
+		return ""
+	}
+
+	tok := creds.ClaudeAiOauth.AccessToken
+	if strings.HasPrefix(tok, "sk-ant-oat") {
+		return tok
+	}
+	return ""
+}
+
 func stepAIProvider(cfg *config.Config) {
 	fmt.Println("\n  Step 1/3: AI Provider")
 
@@ -294,17 +350,43 @@ func stepAIProvider(cfg *config.Config) {
 	cfg.AI.Provider = p.name
 
 	if p.name == "claude" {
+		// Auto-detect existing tokens to suggest as defaults
+		detectedOAuth := detectClaudeOAuthToken()
+		detectedAPIKey := detectClaudeAPIKey()
+
+		// If existing config or detected token is OAuth, default to Setup Token auth
+		defAuth := 0
+		if detectedOAuth != "" || strings.HasPrefix(cfg.AI.APIKey, "sk-ant-oat") {
+			defAuth = 1
+		}
+
 		authIdx := promptSelect("Auth method:", []string{
 			"API Key       (from console.anthropic.com)",
 			"Setup Token   (from 'claude setup-token', requires Claude subscription)",
-		}, 0)
+		}, defAuth)
 		if authIdx == 0 {
+			defKey := cfg.AI.APIKey
+			if defKey == "" && detectedAPIKey != "" {
+				defKey = detectedAPIKey
+				fmt.Printf("\n  Detected existing API key: %s\n", maskKey(defKey))
+			}
 			fmt.Printf("\n  Claude API Key (%s)\n", p.keyURL)
-			cfg.AI.APIKey = promptText("API Key", cfg.AI.APIKey)
+			cfg.AI.APIKey = promptText("API Key", defKey)
 		} else {
-			fmt.Println("\n  Run 'claude setup-token' in another terminal, then paste the token here.")
-			fmt.Println("  (Requires Claude Code CLI and an active Claude subscription)")
-			cfg.AI.APIKey = promptText("Setup Token (sk-ant-oat01-...)", cfg.AI.APIKey)
+			// Pick best default: prefer detected (freshest), fall back to config
+			defToken := detectedOAuth
+			if defToken == "" {
+				defToken = cfg.AI.APIKey
+			}
+
+			if defToken != "" {
+				fmt.Printf("\n  Detected existing Claude token: %s\n", maskKey(defToken))
+				fmt.Println("  Press Enter to use it, or paste a different token.")
+			} else {
+				fmt.Println("\n  Run 'claude setup-token' in another terminal, then paste the token here.")
+				fmt.Println("  (Requires Claude Code CLI and an active Claude subscription)")
+			}
+			cfg.AI.APIKey = promptText("Setup Token (sk-ant-oat01-...)", defToken)
 			if cfg.AI.APIKey != "" && !strings.HasPrefix(cfg.AI.APIKey, "sk-ant-oat") {
 				fmt.Println("  Warning: expected token starting with sk-ant-oat01-")
 			}
