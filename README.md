@@ -21,7 +21,7 @@
 - 🔌 **嵌入式友好** — 可编译到 ARM/MIPS，轻松部署到树莓派、路由器、NAS
 - 🧠 **多 AI 后端** — 集成 Claude、DeepSeek、Kimi、MiniMax、Gemini 等 [15 种 AI 服务](docs/ai-providers.md)，按需切换
 
-支持钉钉、飞书、企业微信、微信公众号、Slack、Telegram、Discord 等平台接入，既可通过**云中继 5 分钟秒接**，也可 [OpenClaw](docs/openclaw-reference.md) 式**传统自建部署**。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
+支持企业微信、飞书、钉钉、Slack、Telegram、Discord、WhatsApp、LINE、Teams 等 [19 种聊天平台](docs/chat-platforms.md) 接入，既可通过**云中继 5 分钟秒接**，也可 [OpenClaw](docs/openclaw-reference.md) 式**传统自建部署**。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
 
 > 🐕⚡ **为什么叫"灵小缇"？** 灵缇犬（Greyhound）是世界上跑得最快的犬，以敏捷、忠诚著称。灵小缇同样敏捷高效，是你忠实的 AI 助手。
 
@@ -169,12 +169,26 @@ make build
 | 平台 | 协议 | 接入方式 | 状态 |
 |------|------|----------|------|
 | **企业微信** | 回调 API | 云中继 / 自建 | ✅ |
-| **飞书/Lark** | WebSocket | 一键接入 | ✅ |
 | **微信公众号** | 云中继 | 10秒接入 | ✅ |
+| **钉钉** | Stream Mode | 一键接入 | ✅ |
+| **飞书/Lark** | WebSocket | 一键接入 | ✅ |
 | **Slack** | Socket Mode | 一键接入 | ✅ |
 | **Telegram** | Bot API | 一键接入 | ✅ |
 | **Discord** | Gateway | 一键接入 | ✅ |
-| **钉钉** | Stream Mode | 一键接入 | ✅ |
+| **WhatsApp** | Webhook + Graph API | 自建 | ✅ |
+| **LINE** | Webhook + Push API | 自建 | ✅ |
+| **Microsoft Teams** | Bot Framework | 自建 | ✅ |
+| **Matrix / Element** | HTTP Sync | 自建 | ✅ |
+| **Google Chat** | Webhook + REST | 自建 | ✅ |
+| **Mattermost** | WebSocket + REST | 自建 | ✅ |
+| **iMessage** | BlueBubbles | 自建 | ✅ |
+| **Signal** | signal-cli REST | 自建 | ✅ |
+| **Twitch** | IRC | 自建 | ✅ |
+| **NOSTR** | WebSocket Relays | 自建 | ✅ |
+| **Zalo** | Webhook + REST | 自建 | ✅ |
+| **Nextcloud Talk** | HTTP Polling | 自建 | ✅ |
+
+> 完整列表（含配置参数、环境变量）：[聊天平台列表](docs/chat-platforms.md)
 
 **云中继优势：** 无需公网服务器、无需域名备案、无需 HTTPS 证书、无需防火墙配置，5 分钟完成接入。
 
@@ -327,7 +341,7 @@ lingti-bot skills info github
 | 模块 | 说明 | 特点 |
 |------|------|------|
 | **MCP Server** | 标准 MCP 协议服务器 | 兼容 Claude Desktop、Cursor、Windsurf 等所有 MCP 客户端 |
-| **多平台消息网关** | 消息平台集成 | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
+| **多平台消息网关** | [19 种聊天平台](docs/chat-platforms.md) | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
 | **MCP 工具集** | 75+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
 | **Skills** | 模块化能力扩展 | 8 个内置 Skill，支持自定义和项目级扩展 |
 | **智能对话** | 多轮对话与记忆 | 上下文记忆、[15 种 AI 后端](docs/ai-providers.md) |
@@ -557,13 +571,27 @@ lingti-bot router \
 
 | 平台 | 协议 | 状态 |
 |------|------|------|
-| **Slack** | Socket Mode | ✅ 已支持 |
+| **企业微信** | 回调 API | ✅ 已支持 |
+| **微信公众号** | 云中继 | ✅ 已支持 |
+| **钉钉** | Stream Mode | ✅ 已支持 |
 | **飞书/Lark** | WebSocket | ✅ 已支持 |
+| **Slack** | Socket Mode | ✅ 已支持 |
 | **Telegram** | Bot API | ✅ 已支持 |
 | **Discord** | Gateway | ✅ 已支持 |
-| **云中继** | WebSocket | ✅ 已支持 |
-| **钉钉** | Stream Mode | ✅ 已支持 |
-| **企业微信** | 回调 API | ✅ 已支持 |
+| **WhatsApp** | Webhook + Graph API | ✅ 已支持 |
+| **LINE** | Webhook + Push API | ✅ 已支持 |
+| **Microsoft Teams** | Bot Framework | ✅ 已支持 |
+| **Matrix / Element** | HTTP Sync | ✅ 已支持 |
+| **Google Chat** | Webhook + REST | ✅ 已支持 |
+| **Mattermost** | WebSocket + REST | ✅ 已支持 |
+| **iMessage** | BlueBubbles | ✅ 已支持 |
+| **Signal** | signal-cli REST | ✅ 已支持 |
+| **Twitch** | IRC | ✅ 已支持 |
+| **NOSTR** | WebSocket Relays | ✅ 已支持 |
+| **Zalo** | Webhook + REST | ✅ 已支持 |
+| **Nextcloud Talk** | HTTP Polling | ✅ 已支持 |
+
+> 完整列表：[聊天平台列表](docs/chat-platforms.md)
 
 ### 一键接入
 
@@ -620,6 +648,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 ### 详细文档
 
 - [AI 服务列表](docs/ai-providers.md) - 15 种 AI 服务详情、API Key 获取、别名
+- [聊天平台列表](docs/chat-platforms.md) - 19 种聊天平台详情、配置参数、环境变量
 - [命令行参考](docs/cli-reference.md) - 完整的命令行使用文档
 - [Skills 指南](docs/skills.md) - Skills 系统详解：创建、发现、配置
 - [Slack 集成指南](docs/slack-integration.md) - 完整的 Slack 应用配置教程

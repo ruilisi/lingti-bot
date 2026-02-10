@@ -21,7 +21,7 @@ English | [中文](./README.md)
 - 🔌 **Embedded Friendly** — Compile to ARM/MIPS, easy deployment to Raspberry Pi, routers, NAS
 - 🧠 **Multi-AI Backend** — [15 AI providers](docs/ai-providers.md) including Claude, DeepSeek, Kimi, MiniMax, Gemini, OpenAI, and more
 
-Supports DingTalk, Feishu, WeCom, WeChat Official Account, Slack, Telegram, Discord and more. Either **5-minute cloud relay** or [OpenClaw](docs/openclaw-reference.md)-style **self-hosted deployment**. Check [Roadmap](docs/roadmap.md) for more features.
+Supports WeCom, Feishu, DingTalk, Slack, Telegram, Discord, WhatsApp, LINE, Teams, and more — [19 chat platforms](docs/chat-platforms.md) in total. Either **5-minute cloud relay** or [OpenClaw](docs/openclaw-reference.md)-style **self-hosted deployment**. Check [Roadmap](docs/roadmap.md) for more features.
 
 > 🐕⚡ **Why "Lingti"?** Lingti (灵缇) means Greyhound in Chinese - the fastest dog in the world, known for agility and loyalty. Lingti Bot is equally agile and efficient, your faithful AI assistant.
 
@@ -147,15 +147,29 @@ In addition to MCP mode, lingti-bot can also run as a **message router**, connec
 
 **Supported Platforms:**
 
-| Platform | Connection Method | Setup Time | Status |
-|----------|-------------------|------------|--------|
+| Platform | Connection Method | Setup | Status |
+|----------|-------------------|-------|--------|
 | **WeCom** | Callback API | Cloud Relay / Self-hosted | ✅ |
-| **Feishu/Lark** | WebSocket | One-click | ✅ |
 | **WeChat Official** | Cloud Relay | 10 seconds | ✅ |
+| **DingTalk** | Stream Mode | One-click | ✅ |
+| **Feishu/Lark** | WebSocket | One-click | ✅ |
 | **Slack** | Socket Mode | One-click | ✅ |
 | **Telegram** | Bot API | One-click | ✅ |
 | **Discord** | Gateway | One-click | ✅ |
-| **DingTalk** | Stream Mode | One-click | ✅ |
+| **WhatsApp** | Webhook + Graph API | Self-hosted | ✅ |
+| **LINE** | Webhook + Push API | Self-hosted | ✅ |
+| **Microsoft Teams** | Bot Framework | Self-hosted | ✅ |
+| **Matrix / Element** | HTTP Sync | Self-hosted | ✅ |
+| **Google Chat** | Webhook + REST | Self-hosted | ✅ |
+| **Mattermost** | WebSocket + REST | Self-hosted | ✅ |
+| **iMessage** | BlueBubbles | Self-hosted | ✅ |
+| **Signal** | signal-cli REST | Self-hosted | ✅ |
+| **Twitch** | IRC | Self-hosted | ✅ |
+| **NOSTR** | WebSocket Relays | Self-hosted | ✅ |
+| **Zalo** | Webhook + REST | Self-hosted | ✅ |
+| **Nextcloud Talk** | HTTP Polling | Self-hosted | ✅ |
+
+> Full list with config details and env vars: [Chat Platforms](docs/chat-platforms.md)
 
 **Cloud Relay Advantage:** No public server, no domain registration, no HTTPS certificate, no firewall configuration, 5 minutes to complete integration.
 
@@ -288,6 +302,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 ## Documentation
 
 - [AI Providers](docs/ai-providers.md) - 15 supported AI providers with API key links and aliases
+- [Chat Platforms](docs/chat-platforms.md) - 19 supported chat platforms with config details and env vars
 - [CLI Reference](docs/cli-reference.md) - Complete CLI documentation
 - [Skills Guide](docs/skills.md) - Modular capability packs: create, discover, manage skills
 - [Slack Integration Guide](docs/slack-integration.md) - Complete Slack app configuration tutorial
