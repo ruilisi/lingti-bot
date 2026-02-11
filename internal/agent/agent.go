@@ -9,9 +9,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pltanton/lingti-bot/internal/config"
 	cronpkg "github.com/pltanton/lingti-bot/internal/cron"
 	"github.com/pltanton/lingti-bot/internal/logger"
 	"github.com/pltanton/lingti-bot/internal/router"
+	"github.com/pltanton/lingti-bot/internal/skills"
 )
 
 // Agent processes messages using AI providers and tools
@@ -205,8 +207,7 @@ func (a *Agent) handleBuiltinCommand(msg router.Message) (router.Response, bool)
 		}, true
 
 	case "/tools", "工具", "工具列表":
-		return router.Response{
-			Text: `可用工具:
+		toolsText := `可用工具:
 
 📁 文件操作:
   file_send, file_list, file_read, file_write, file_trash, file_list_old
@@ -244,8 +245,8 @@ func (a *Agent) handleBuiltinCommand(msg router.Message) (router.Response, bool)
   system_info, shell_execute, process_list
 
 ⏰ 定时任务:
-  cron_create, cron_list, cron_delete, cron_pause, cron_resume`,
-		}, true
+  cron_create, cron_list, cron_delete, cron_pause, cron_resume` + formatSkillsSection()
+		return router.Response{Text: toolsText}, true
 
 	case "/verbose on", "详细模式开":
 		a.sessions.SetVerbose(convKey, true)
@@ -478,7 +479,7 @@ Then re-snapshot and continue.
    - Example: cron_create(name="motivation", schedule="43 * * * *", prompt="生成一条独特的编程激励鸡汤，鼓励用户写代码创造新产品")
    - NEVER call cron_create multiple times. NEVER use shell_execute or file_write for cron tasks.
 
-Current date: %s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir, homeDir, homeDir, homeDir, msg.Username, time.Now().Format("2006-01-02"), thinkingPrompt)
+Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir, homeDir, homeDir, homeDir, msg.Username, time.Now().Format("2006-01-02"), thinkingPrompt, formatSkillsSection())
 
 	// Call AI provider
 	resp, err := a.provider.Chat(ctx, ChatRequest{
@@ -535,6 +536,28 @@ Current date: %s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir, 
 	logger.Debug("[Agent] Response: %s", resp.Content)
 
 	return router.Response{Text: resp.Content, Files: pendingFiles}, nil
+}
+
+// formatSkillsSection returns a formatted string listing eligible skills, or empty if none.
+func formatSkillsSection() string {
+	cfg, err := config.Load()
+	var disabled, extraDirs []string
+	if err == nil {
+		disabled = cfg.Skills.Disabled
+		extraDirs = cfg.Skills.ExtraDirs
+	}
+	report := skills.BuildStatusReport(disabled, extraDirs)
+	eligible := report.EligibleSkills()
+	if len(eligible) == 0 {
+		return ""
+	}
+	var sb strings.Builder
+	sb.WriteString("\n\nSkills:\n")
+	for _, s := range eligible {
+		fmt.Fprintf(&sb, "  %s: %s\n", s.Name, s.Description)
+	}
+	fmt.Fprintf(&sb, "\n安装 Skill: 将 skill 文件夹放入 %s 即可", skills.ShortenHomePath(report.ManagedDir))
+	return sb.String()
 }
 
 // buildToolsList creates the tools list for the AI provider
