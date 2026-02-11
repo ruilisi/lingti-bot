@@ -34,9 +34,40 @@ lingti-bot relay --platform wecom \
 
 ## 微信公众号
 
-> **重要**：微信公众号的文件发送需要额外配置 `--wechat-app-id` 和 `--wechat-app-secret`。仅配置 `--user-id` 和 `--platform wechat` 只能发送文本消息，不能发送文件。
+### 为什么需要额外配置？
 
-微信公众号通过[客服接口](https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html)发送媒体文件。这要求公众号已获得「客服接口」权限，并使用公众号的 AppID 和 AppSecret 获取 access_token。
+微信公众号有两种消息发送方式：
+
+1. **被动回复（Passive Reply）**— 用户发消息后，公众号在 5 秒内直接返回响应。这是 lingti-bot 默认使用的文本回复方式，通过云中继网关 `bot.lingti.com` 转发，**不需要你自己的公众号凭据**。
+2. **主动发送（Customer Service API / 客服接口）**— 通过调用微信 API 主动向用户推送消息。这是发送图片、语音、视频等媒体文件的**唯一方式**，因为被动回复不支持上传和发送媒体素材。
+
+文件发送使用的是**方式 2（主动发送）**，因此必须提供你自己公众号（或服务号）的 `WECHAT_APP_ID` 和 `WECHAT_APP_SECRET`，用于获取 access_token 来调用微信 API。
+
+> **总结**：纯文本对话不需要任何公众号凭据；发送文件/图片/语音/视频则必须配置 AppID + AppSecret。
+
+### 两个限制
+
+**限制 1：必须提供自己的公众号/服务号凭据**
+
+你需要一个已认证的微信公众号或服务号，并提供其 AppID 和 AppSecret。这是因为：
+- 客服接口需要用你的公众号身份调用微信 API
+- access_token 是基于你的 AppID + AppSecret 生成的
+- 灵缇小秘公众号的凭据无法用于向你的关注者发送消息（微信的安全机制要求消息发送方和接收方属于同一公众号）
+
+**限制 2：仅支持图片/语音/视频，不支持任意文件**
+
+微信公众号客服接口[仅支持以下媒体类型](https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html)：
+
+| 文件类型 | 扩展名 | 发送方式 | 说明 |
+|---------|--------|---------|------|
+| 图片 | .jpg .jpeg .png .gif .bmp | 图片消息 | 直接发送，用户可查看/保存 |
+| 语音 | .amr .mp3 .speex | 语音消息 | 直接发送 |
+| 视频 | .mp4 | 视频消息 | 直接发送 |
+| 其他 | .md .txt .pdf .docx 等 | ⚠️ 文本预览 | 截取前 500 字以文本消息发送 |
+
+与企业微信不同，**公众号 API 没有通用的 `file` 类型**。企业微信的应用消息接口支持发送任意文件附件（`msgtype: file`），但公众号客服接口不提供此能力，这是微信平台本身的限制。
+
+对于不支持的文件类型（如 .md、.pdf、.docx），lingti-bot 会读取文件内容并以文本消息形式发送预览。由于微信文本消息有字数限制，内容会被截取至前 500 字并标注"内容过长，已截断"。
 
 ### 配置步骤
 
@@ -62,17 +93,6 @@ export WECHAT_APP_SECRET="your-app-secret"
 
 lingti-bot relay --user-id YOUR_USER_ID --platform wechat --api-key YOUR_API_KEY
 ```
-
-### 支持的文件类型
-
-| 文件类型 | 扩展名 | 发送方式 |
-|---------|--------|---------|
-| 图片 | .jpg .jpeg .png .gif .bmp | 图片消息 |
-| 语音 | .amr .mp3 .speex | 语音消息 |
-| 视频 | .mp4 | 视频消息 |
-| 其他 | .md .txt .pdf .docx 等 | 文本预览（截取前 500 字） |
-
-> **注意**：微信公众号 API 不支持发送任意文件附件（与企业微信不同）。对于文档类文件，bot 会读取文件内容并以文本消息形式发送预览。
 
 ### 不配置 AppID/AppSecret 时
 

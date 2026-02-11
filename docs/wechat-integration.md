@@ -47,7 +47,7 @@ lingti-bot relay \
 | `--wechat-app-id` | 公众号 AppID（文件发送需要） | `wx1234567890` |
 | `--wechat-app-secret` | 公众号 AppSecret（文件发送需要） | 从公众平台获取 |
 
-> **发送文件/图片**：如果需要 AI 发送图片、语音等文件，必须配置 `--wechat-app-id` 和 `--wechat-app-secret`。不配置时仅支持文本消息。详见 [文件发送指南](file-sending.md)。
+> **发送文件/图片**：纯文本对话无需这两个参数。但如果需要 AI 发送图片、语音、视频等文件，则必须配置 `--wechat-app-id` 和 `--wechat-app-secret`。这是因为文件发送使用的是微信[客服接口（主动发送）](https://developers.weixin.qq.com/doc/offiaccount/Message_Management/Service_Center_messages.html)而非被动回复，需要用你自己的公众号/服务号凭据获取 access_token。此外，公众号仅支持发送图片/语音/视频，不支持任意文件附件（与企业微信不同）。详见 [文件发送指南](file-sending.md)。
 
 ### 第四步：开始对话
 
