@@ -147,27 +147,29 @@ In addition to MCP mode, lingti-bot can also run as a **message router**, connec
 
 **Supported Platforms:**
 
-| Platform | Connection Method | Setup | Status |
-|----------|-------------------|-------|--------|
-| **WeCom** | Callback API | Cloud Relay / Self-hosted | ✅ |
-| **WeChat Official** | Cloud Relay | 10 seconds | ✅ |
-| **DingTalk** | Stream Mode | One-click | ✅ |
-| **Feishu/Lark** | WebSocket | One-click | ✅ |
-| **Slack** | Socket Mode | One-click | ✅ |
-| **Telegram** | Bot API | One-click | ✅ |
-| **Discord** | Gateway | One-click | ✅ |
-| **WhatsApp** | Webhook + Graph API | Self-hosted | ✅ |
-| **LINE** | Webhook + Push API | Self-hosted | ✅ |
-| **Microsoft Teams** | Bot Framework | Self-hosted | ✅ |
-| **Matrix / Element** | HTTP Sync | Self-hosted | ✅ |
-| **Google Chat** | Webhook + REST | Self-hosted | ✅ |
-| **Mattermost** | WebSocket + REST | Self-hosted | ✅ |
-| **iMessage** | BlueBubbles | Self-hosted | ✅ |
-| **Signal** | signal-cli REST | Self-hosted | ✅ |
-| **Twitch** | IRC | Self-hosted | ✅ |
-| **NOSTR** | WebSocket Relays | Self-hosted | ✅ |
-| **Zalo** | Webhook + REST | Self-hosted | ✅ |
-| **Nextcloud Talk** | HTTP Polling | Self-hosted | ✅ |
+| Platform | Connection Method | Setup | File Sending | Status |
+|----------|-------------------|-------|-------------|--------|
+| **WeCom** | Callback API | Cloud Relay / Self-hosted | ✅ All formats | ✅ |
+| **WeChat Official** | Cloud Relay | 10 seconds | ✅ Image/Voice/Video | ✅ |
+| **DingTalk** | Stream Mode | One-click | 🔜 Planned | ✅ |
+| **Feishu/Lark** | WebSocket | One-click | 🔜 Planned | ✅ |
+| **Slack** | Socket Mode | One-click | 🔜 Planned | ✅ |
+| **Telegram** | Bot API | One-click | 🔜 Planned | ✅ |
+| **Discord** | Gateway | One-click | 🔜 Planned | ✅ |
+| **WhatsApp** | Webhook + Graph API | Self-hosted | 🔜 Planned | ✅ |
+| **LINE** | Webhook + Push API | Self-hosted | 🔜 Planned | ✅ |
+| **Microsoft Teams** | Bot Framework | Self-hosted | 🔜 Planned | ✅ |
+| **Matrix / Element** | HTTP Sync | Self-hosted | 🔜 Planned | ✅ |
+| **Google Chat** | Webhook + REST | Self-hosted | 🔜 Planned | ✅ |
+| **Mattermost** | WebSocket + REST | Self-hosted | 🔜 Planned | ✅ |
+| **iMessage** | BlueBubbles | Self-hosted | 🔜 Planned | ✅ |
+| **Signal** | signal-cli REST | Self-hosted | 🔜 Planned | ✅ |
+| **Twitch** | IRC | Self-hosted | — | ✅ |
+| **NOSTR** | WebSocket Relays | Self-hosted | 🔜 Planned | ✅ |
+| **Zalo** | Webhook + REST | Self-hosted | 🔜 Planned | ✅ |
+| **Nextcloud Talk** | HTTP Polling | Self-hosted | 🔜 Planned | ✅ |
+
+> File sending details (setup, supported types, limitations): [File Sending Guide](docs/file-sending.md)
 
 > Full list with config details and env vars: [Chat Platforms](docs/chat-platforms.md)
 
@@ -308,6 +310,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 - [Slack Integration Guide](docs/slack-integration.md) - Complete Slack app configuration tutorial
 - [Feishu Integration Guide](docs/feishu-integration.md) - Feishu/Lark app configuration tutorial
 - [WeCom Integration Guide](docs/wecom-integration.md) - WeCom app configuration tutorial
+- [File Sending Guide](docs/file-sending.md) - Per-platform file transfer capabilities, setup, and limitations
 - [Browser Automation Guide](docs/browser-automation.md) - Snapshot-then-act browser control
 - [OpenClaw Feature Comparison](docs/openclaw-feature-comparison.md) - Detailed feature difference analysis
 

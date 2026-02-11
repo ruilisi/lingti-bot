@@ -48,6 +48,7 @@ type PlatformConfig struct {
 	Slack    SlackConfig    `yaml:"slack,omitempty"`
 	Telegram TelegramConfig `yaml:"telegram,omitempty"`
 	Discord  DiscordConfig  `yaml:"discord,omitempty"`
+	WeChat   WeChatConfig   `yaml:"wechat,omitempty"`
 	Feishu   FeishuConfig   `yaml:"feishu,omitempty"`
 	DingTalk DingTalkConfig `yaml:"dingtalk,omitempty"`
 	WhatsApp WhatsAppConfig `yaml:"whatsapp,omitempty"`
@@ -84,6 +85,11 @@ type TelegramConfig struct {
 
 type DiscordConfig struct {
 	Token string `yaml:"token,omitempty"`
+}
+
+type WeChatConfig struct {
+	AppID     string `yaml:"app_id,omitempty"`
+	AppSecret string `yaml:"app_secret,omitempty"`
 }
 
 type FeishuConfig struct {

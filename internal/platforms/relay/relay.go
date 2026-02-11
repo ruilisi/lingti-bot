@@ -9,12 +9,14 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/pltanton/lingti-bot/internal/debug"
+	"github.com/pltanton/lingti-bot/internal/platforms/wechat"
 	"github.com/pltanton/lingti-bot/internal/platforms/wecom"
 	"github.com/pltanton/lingti-bot/internal/router"
 )
@@ -44,6 +46,9 @@ type Config struct {
 	WeComSecret  string
 	WeComToken   string
 	WeComAESKey  string
+	// WeChat Official Account credentials (when platform=wechat)
+	WeChatAppID     string
+	WeChatAppSecret string
 }
 
 // Platform implements router.Platform for cloud relay
@@ -61,6 +66,8 @@ type Platform struct {
 	msgCrypt *wecom.MsgCrypt
 	// WeCom platform for direct API calls (media upload/send)
 	wecomPlatform *wecom.Platform
+	// WeChat OA client for media upload/send (when platform=wechat)
+	wechatClient *wechat.Client
 }
 
 // Protocol message types
@@ -186,6 +193,12 @@ func New(cfg Config) (*Platform, error) {
 		}
 	}
 
+	// Initialize WeChat OA client for media upload/send (when platform=wechat)
+	if cfg.Platform == "wechat" && cfg.WeChatAppID != "" && cfg.WeChatAppSecret != "" {
+		p.wechatClient = wechat.NewClient(cfg.WeChatAppID, cfg.WeChatAppSecret)
+		log.Printf("[Relay] WeChat OA media API enabled")
+	}
+
 	return p, nil
 }
 
@@ -246,31 +259,83 @@ func (p *Platform) Send(ctx context.Context, channelID string, resp router.Respo
 		}
 	}
 
-	// Send file attachments directly via WeCom API
+	// Send file attachments directly via platform API
 	for _, file := range resp.Files {
-		if p.wecomPlatform == nil {
-			log.Printf("[Relay] Cannot send file: WeCom platform not initialized")
-			return fmt.Errorf("WeCom media API not available for file sending")
-		}
-
 		mediaType := file.MediaType
 		if mediaType == "" {
 			mediaType = "file"
 		}
 
-		log.Printf("[Relay] Uploading file: %s (type=%s)", file.Path, mediaType)
-		mediaID, err := p.wecomPlatform.UploadMedia(file.Path, mediaType)
-		if err != nil {
-			log.Printf("[Relay] Failed to upload %s: %v", file.Path, err)
-			return fmt.Errorf("failed to upload file %s: %w", file.Path, err)
-		}
-		log.Printf("[Relay] Upload complete, media_id=%s. Sending to %s", mediaID, channelID)
+		switch {
+		case p.wechatClient != nil:
+			// WeChat OA only supports image/voice/video/thumb uploads.
+			// For unsupported file types, read content and send as text.
+			wxMediaType := wechatMediaType(file.Path, mediaType)
+			if wxMediaType == "" {
+				// Unsupported type — send file content as text message
+				log.Printf("[Relay] WeChat OA: unsupported file type, sending content as text: %s", file.Path)
+				content, err := os.ReadFile(file.Path)
+				if err != nil {
+					return fmt.Errorf("failed to read file %s: %w", file.Path, err)
+				}
+				runes := []rune(string(content))
+				const maxRunes = 500
+				body := string(content)
+				if len(runes) > maxRunes {
+					body = string(runes[:maxRunes]) + "\n\n... (内容过长，已截断)"
+				}
+				text := fmt.Sprintf("📎 %s\n\n%s", filepath.Base(file.Path), body)
+				if err := p.sendWebhook(ctx, channelID, router.Response{
+					Text:     text,
+					Metadata: resp.Metadata,
+				}); err != nil {
+					return fmt.Errorf("failed to send file content as text: %w", err)
+				}
+				continue
+			}
 
-		if err := p.wecomPlatform.SendMediaMessage(channelID, mediaID, mediaType); err != nil {
-			log.Printf("[Relay] Failed to send media message: %v", err)
-			return fmt.Errorf("failed to send file %s: %w", file.Path, err)
+			log.Printf("[Relay] Uploading file to WeChat OA: %s (type=%s)", file.Path, wxMediaType)
+			mediaID, err := p.wechatClient.UploadMedia(file.Path, wxMediaType)
+			if err != nil {
+				log.Printf("[Relay] Failed to upload %s: %v", file.Path, err)
+				return fmt.Errorf("failed to upload file %s: %w", file.Path, err)
+			}
+			log.Printf("[Relay] Upload complete, media_id=%s. Sending to %s", mediaID, channelID)
+
+			switch wxMediaType {
+			case "voice":
+				err = p.wechatClient.SendVoice(channelID, mediaID)
+			case "video":
+				err = p.wechatClient.SendVideo(channelID, mediaID, "", "")
+			default:
+				err = p.wechatClient.SendImage(channelID, mediaID)
+			}
+			if err != nil {
+				log.Printf("[Relay] Failed to send media message: %v", err)
+				return fmt.Errorf("failed to send file %s: %w", file.Path, err)
+			}
+			log.Printf("[Relay] File sent successfully via WeChat OA: %s -> %s", file.Path, channelID)
+
+		case p.wecomPlatform != nil:
+			// WeCom: upload + send via WeCom API
+			log.Printf("[Relay] Uploading file: %s (type=%s)", file.Path, mediaType)
+			mediaID, err := p.wecomPlatform.UploadMedia(file.Path, mediaType)
+			if err != nil {
+				log.Printf("[Relay] Failed to upload %s: %v", file.Path, err)
+				return fmt.Errorf("failed to upload file %s: %w", file.Path, err)
+			}
+			log.Printf("[Relay] Upload complete, media_id=%s. Sending to %s", mediaID, channelID)
+
+			if err := p.wecomPlatform.SendMediaMessage(channelID, mediaID, mediaType); err != nil {
+				log.Printf("[Relay] Failed to send media message: %v", err)
+				return fmt.Errorf("failed to send file %s: %w", file.Path, err)
+			}
+			log.Printf("[Relay] File sent successfully: %s -> %s", file.Path, channelID)
+
+		default:
+			log.Printf("[Relay] Cannot send file: no media API initialized")
+			return fmt.Errorf("media API not available for file sending")
 		}
-		log.Printf("[Relay] File sent successfully: %s -> %s", file.Path, channelID)
 	}
 
 	return nil
@@ -734,5 +799,28 @@ func (p *Platform) reconnect(retryDelay *time.Duration) {
 	} else {
 		log.Printf("[Relay] Reconnected successfully")
 		*retryDelay = initialRetryDelay
+	}
+}
+
+// wechatMediaType maps a file path and media type hint to a WeChat OA media type.
+// Returns "" if the file type is not supported by WeChat OA media upload.
+func wechatMediaType(filePath, mediaType string) string {
+	// If already a supported WeChat media type, use it directly
+	switch mediaType {
+	case "image", "voice", "video", "thumb":
+		return mediaType
+	}
+
+	// Infer from file extension
+	ext := strings.ToLower(filepath.Ext(filePath))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".bmp":
+		return "image"
+	case ".amr", ".mp3", ".speex":
+		return "voice"
+	case ".mp4":
+		return "video"
+	default:
+		return ""
 	}
 }

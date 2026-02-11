@@ -32,6 +32,9 @@ var (
 	relayWeComSecret  string
 	relayWeComToken   string
 	relayWeComAESKey  string
+	// WeChat OA credentials
+	relayWeChatAppID     string
+	relayWeChatAppSecret string
 )
 
 var relayCmd = &cobra.Command{
@@ -110,6 +113,10 @@ func init() {
 	relayCmd.Flags().StringVar(&relayWeComSecret, "wecom-secret", "", "WeCom Secret (or WECOM_SECRET env)")
 	relayCmd.Flags().StringVar(&relayWeComToken, "wecom-token", "", "WeCom Callback Token (or WECOM_TOKEN env)")
 	relayCmd.Flags().StringVar(&relayWeComAESKey, "wecom-aes-key", "", "WeCom Encoding AES Key (or WECOM_AES_KEY env)")
+
+	// WeChat OA credentials
+	relayCmd.Flags().StringVar(&relayWeChatAppID, "wechat-app-id", "", "WeChat OA App ID (or WECHAT_APP_ID env)")
+	relayCmd.Flags().StringVar(&relayWeChatAppSecret, "wechat-app-secret", "", "WeChat OA App Secret (or WECHAT_APP_SECRET env)")
 }
 
 func runRelay(cmd *cobra.Command, args []string) {
@@ -169,6 +176,14 @@ func runRelay(cmd *cobra.Command, args []string) {
 		relayWeComAESKey = os.Getenv("WECOM_AES_KEY")
 	}
 
+	// Get WeChat OA credentials from flags or environment
+	if relayWeChatAppID == "" {
+		relayWeChatAppID = os.Getenv("WECHAT_APP_ID")
+	}
+	if relayWeChatAppSecret == "" {
+		relayWeChatAppSecret = os.Getenv("WECHAT_APP_SECRET")
+	}
+
 	// Fallback to saved config file
 	if savedCfg, err := config.Load(); err == nil {
 		if relayAIProvider == "" {
@@ -210,6 +225,12 @@ func runRelay(cmd *cobra.Command, args []string) {
 		}
 		if relayWeComAESKey == "" {
 			relayWeComAESKey = savedCfg.Platforms.WeCom.AESKey
+		}
+		if relayWeChatAppID == "" {
+			relayWeChatAppID = savedCfg.Platforms.WeChat.AppID
+		}
+		if relayWeChatAppSecret == "" {
+			relayWeChatAppSecret = savedCfg.Platforms.WeChat.AppSecret
 		}
 	}
 
@@ -317,11 +338,13 @@ func runRelay(cmd *cobra.Command, args []string) {
 		WebhookURL:   relayWebhookURL,
 		AIProvider:   providerName,
 		AIModel:      modelName,
-		WeComCorpID:  relayWeComCorpID,
-		WeComAgentID: relayWeComAgentID,
-		WeComSecret:  relayWeComSecret,
-		WeComToken:   relayWeComToken,
-		WeComAESKey:  relayWeComAESKey,
+		WeComCorpID:     relayWeComCorpID,
+		WeComAgentID:    relayWeComAgentID,
+		WeComSecret:     relayWeComSecret,
+		WeComToken:      relayWeComToken,
+		WeComAESKey:     relayWeComAESKey,
+		WeChatAppID:     relayWeChatAppID,
+		WeChatAppSecret: relayWeChatAppSecret,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating relay platform: %v\n", err)

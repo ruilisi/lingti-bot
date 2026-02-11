@@ -176,27 +176,29 @@ make build
 
 支持国内外主流企业消息平台，让团队在熟悉的工具中直接与 AI 对话。
 
-| 平台 | 协议 | 接入方式 | 状态 |
-|------|------|----------|------|
-| **企业微信** | 回调 API | 云中继 / 自建 | ✅ |
-| **微信公众号** | 云中继 | 10秒接入 | ✅ |
-| **钉钉** | Stream Mode | 一键接入 | ✅ |
-| **飞书/Lark** | WebSocket | 一键接入 | ✅ |
-| **Slack** | Socket Mode | 一键接入 | ✅ |
-| **Telegram** | Bot API | 一键接入 | ✅ |
-| **Discord** | Gateway | 一键接入 | ✅ |
-| **WhatsApp** | Webhook + Graph API | 自建 | ✅ |
-| **LINE** | Webhook + Push API | 自建 | ✅ |
-| **Microsoft Teams** | Bot Framework | 自建 | ✅ |
-| **Matrix / Element** | HTTP Sync | 自建 | ✅ |
-| **Google Chat** | Webhook + REST | 自建 | ✅ |
-| **Mattermost** | WebSocket + REST | 自建 | ✅ |
-| **iMessage** | BlueBubbles | 自建 | ✅ |
-| **Signal** | signal-cli REST | 自建 | ✅ |
-| **Twitch** | IRC | 自建 | ✅ |
-| **NOSTR** | WebSocket Relays | 自建 | ✅ |
-| **Zalo** | Webhook + REST | 自建 | ✅ |
-| **Nextcloud Talk** | HTTP Polling | 自建 | ✅ |
+| 平台 | 协议 | 接入方式 | 文件发送 | 状态 |
+|------|------|----------|---------|------|
+| **企业微信** | 回调 API | 云中继 / 自建 | ✅ 全格式 | ✅ |
+| **微信公众号** | 云中继 | 10秒接入 | ✅ 图片/语音/视频 | ✅ |
+| **钉钉** | Stream Mode | 一键接入 | 🔜 计划中 | ✅ |
+| **飞书/Lark** | WebSocket | 一键接入 | 🔜 计划中 | ✅ |
+| **Slack** | Socket Mode | 一键接入 | 🔜 计划中 | ✅ |
+| **Telegram** | Bot API | 一键接入 | 🔜 计划中 | ✅ |
+| **Discord** | Gateway | 一键接入 | 🔜 计划中 | ✅ |
+| **WhatsApp** | Webhook + Graph API | 自建 | 🔜 计划中 | ✅ |
+| **LINE** | Webhook + Push API | 自建 | 🔜 计划中 | ✅ |
+| **Microsoft Teams** | Bot Framework | 自建 | 🔜 计划中 | ✅ |
+| **Matrix / Element** | HTTP Sync | 自建 | 🔜 计划中 | ✅ |
+| **Google Chat** | Webhook + REST | 自建 | 🔜 计划中 | ✅ |
+| **Mattermost** | WebSocket + REST | 自建 | 🔜 计划中 | ✅ |
+| **iMessage** | BlueBubbles | 自建 | 🔜 计划中 | ✅ |
+| **Signal** | signal-cli REST | 自建 | 🔜 计划中 | ✅ |
+| **Twitch** | IRC | 自建 | — | ✅ |
+| **NOSTR** | WebSocket Relays | 自建 | 🔜 计划中 | ✅ |
+| **Zalo** | Webhook + REST | 自建 | 🔜 计划中 | ✅ |
+| **Nextcloud Talk** | HTTP Polling | 自建 | 🔜 计划中 | ✅ |
+
+> 文件发送详情（配置方法、支持的文件类型、限制）：[文件发送指南](docs/file-sending.md)
 
 > 完整列表（含配置参数、环境变量）：[聊天平台列表](docs/chat-platforms.md)
 
@@ -620,6 +622,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 - [Slack 集成指南](docs/slack-integration.md) - 完整的 Slack 应用配置教程
 - [飞书集成指南](docs/feishu-integration.md) - 飞书/Lark 应用配置教程
 - [企业微信集成指南](docs/wecom-integration.md) - 企业微信应用配置教程
+- [文件发送指南](docs/file-sending.md) - 各平台文件传输能力、配置与限制
 - [定时任务指南](docs/cron-jobs.md) - AI 智能任务 vs 静态消息、Cron 表达式、管理命令
 - [浏览器自动化指南](docs/browser-automation.md) - 快照-操作模式的浏览器控制
 - [OpenClaw 技术特性对比](docs/openclaw-feature-comparison.md) - 详细功能差异分析

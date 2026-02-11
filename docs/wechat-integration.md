@@ -44,6 +44,10 @@ lingti-bot relay \
 | `--model` | AI 模型名称 | `MiniMax-M2.1`、`deepseek-chat`、`claude-3-5-sonnet` |
 | `--api-key` | 模型 API 密钥 | 从模型提供商获取 |
 | `--base-url` | API 端点 | 见下方示例 |
+| `--wechat-app-id` | 公众号 AppID（文件发送需要） | `wx1234567890` |
+| `--wechat-app-secret` | 公众号 AppSecret（文件发送需要） | 从公众平台获取 |
+
+> **发送文件/图片**：如果需要 AI 发送图片、语音等文件，必须配置 `--wechat-app-id` 和 `--wechat-app-secret`。不配置时仅支持文本消息。详见 [文件发送指南](file-sending.md)。
 
 ### 第四步：开始对话
 
