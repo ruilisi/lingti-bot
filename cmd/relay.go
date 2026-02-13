@@ -186,6 +186,8 @@ func runRelay(cmd *cobra.Command, args []string) {
 
 	// Fallback to saved config file
 	if savedCfg, err := config.Load(); err == nil {
+		log.Printf("DEBUG: Config loaded from %s", config.ConfigPath())
+		log.Printf("DEBUG: WeCom CorpID from config: '%s'", savedCfg.Platforms.WeCom.CorpID)
 		if relayAIProvider == "" {
 			relayAIProvider = savedCfg.AI.Provider
 		}

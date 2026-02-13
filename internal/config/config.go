@@ -3,7 +3,6 @@ package config
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"gopkg.in/yaml.v3"
 )
@@ -198,21 +197,13 @@ func DefaultConfig() *Config {
 }
 
 func ConfigDir() string {
-	switch runtime.GOOS {
-	case "darwin":
-		home, _ := os.UserHomeDir()
-		return filepath.Join(home, "Library", "Preferences", "Lingti")
-	case "linux":
-		home, _ := os.UserHomeDir()
-		return filepath.Join(home, ".config", "lingti")
-	default:
-		home, _ := os.UserHomeDir()
-		return filepath.Join(home, ".lingti")
-	}
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".lingti")
 }
 
 func ConfigPath() string {
-	return filepath.Join(ConfigDir(), "bot.yaml")
+	home, _ := os.UserHomeDir()
+	return filepath.Join(home, ".lingti.yaml")
 }
 
 func Load() (*Config, error) {
