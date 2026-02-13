@@ -6,7 +6,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
+	"strings"
 	"sync"
+
+	"github.com/pltanton/lingti-bot/internal/config"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -79,6 +83,18 @@ func (b *Browser) Start(opts StartOptions) error {
 	l := launcher.New().
 		UserDataDir(b.dataDir).
 		Headless(opts.Headless)
+
+	// Apply screen size from config (default: fullscreen)
+	cfg, _ := config.Load()
+	screenSize := cfg.Browser.ScreenSize
+	if screenSize == "" {
+		screenSize = "fullscreen"
+	}
+	if screenSize == "fullscreen" {
+		l = l.Set("start-fullscreen")
+	} else if w, h, ok := parseScreenSize(screenSize); ok {
+		l = l.Set("window-size", fmt.Sprintf("%d,%d", w, h))
+	}
 
 	// Use specified executable, or auto-detect Chrome
 	bin := opts.ExecutablePath
@@ -269,6 +285,20 @@ func ExecuteJS(page *rod.Page, script string) (string, error) {
 		return "", fmt.Errorf("JS execution failed: %w", err)
 	}
 	return result.Value.String(), nil
+}
+
+// parseScreenSize parses a "WIDTHxHEIGHT" string (e.g. "1024x768").
+func parseScreenSize(s string) (width, height int, ok bool) {
+	parts := strings.SplitN(strings.ToLower(s), "x", 2)
+	if len(parts) != 2 {
+		return 0, 0, false
+	}
+	w, err1 := strconv.Atoi(strings.TrimSpace(parts[0]))
+	h, err2 := strconv.Atoi(strings.TrimSpace(parts[1]))
+	if err1 != nil || err2 != nil || w <= 0 || h <= 0 {
+		return 0, 0, false
+	}
+	return w, h, true
 }
 
 // detectChrome returns the path to a local Chrome installation, or empty string if not found.

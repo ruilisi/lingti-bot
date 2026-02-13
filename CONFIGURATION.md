@@ -77,6 +77,9 @@ platforms:
     token: ""
   discord:
     token: ""
+
+browser:
+  screen_size: fullscreen  # "fullscreen" 或 "宽x高"（如 "1024x768"），默认 fullscreen
 ```
 
 ## 环境变量

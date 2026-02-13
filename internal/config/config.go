@@ -17,6 +17,15 @@ type Config struct {
 	Mode      string          `yaml:"mode,omitempty"` // "relay" or "router"
 	Relay     RelayConfig     `yaml:"relay,omitempty"`
 	Skills    SkillsConfig    `yaml:"skills,omitempty"`
+	Browser   BrowserConfig   `yaml:"browser,omitempty"`
+}
+
+// BrowserConfig configures browser automation.
+type BrowserConfig struct {
+	// ScreenSize controls the browser window size.
+	// Use "fullscreen" for fullscreen mode, or "WIDTHxHEIGHT" (e.g. "1024x768").
+	// Default: "fullscreen"
+	ScreenSize string `yaml:"screen_size,omitempty"`
 }
 
 type RelayConfig struct {
