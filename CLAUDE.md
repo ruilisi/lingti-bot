@@ -11,6 +11,11 @@ When adding new configurable parameters, you MUST follow this pattern:
 
 Never skip a tier or change the resolution order. This is a core architectural invariant.
 
+## Documentation Placement
+
+- **Project-wide docs** (applicable to all platforms/modes) go at the repo root alongside `README.md` (e.g., `CONFIGURATION.md`)
+- **Platform-specific or feature-specific docs** go in `docs/` (e.g., `docs/wecom-integration.md`, `docs/browser-automation.md`)
+
 ## Browser Automation
 
 ### Peekaboo (macOS UI Automation)
