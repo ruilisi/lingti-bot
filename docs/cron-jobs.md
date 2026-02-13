@@ -129,4 +129,4 @@ cron_create(
 
 ## 持久化
 
-任务配置保存在 `~/.lingti/crons.json`，重启 lingti-bot 后自动恢复所有任务。
+任务配置保存在 `~/.lingti.db`（SQLite 数据库），重启 lingti-bot 后自动恢复所有任务。

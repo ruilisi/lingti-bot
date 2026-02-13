@@ -1201,6 +1201,20 @@ lingti-bot relay --provider deepseek
 
 ---
 
+## 数据文件
+
+lingti-bot 在用户主目录下存储以下文件：
+
+| 路径 | 说明 |
+|------|------|
+| `~/.lingti.yaml` | 配置文件（AI 服务、平台密钥等） |
+| `~/.lingti.db` | SQLite 数据库（定时任务等持久化数据） |
+| `~/.lingti.db-wal` | SQLite WAL 日志（自动管理，勿手动删除） |
+| `~/.lingti.db-shm` | SQLite 共享内存（自动管理，勿手动删除） |
+| `~/.lingti-bot/browser/` | 浏览器自动化的用户数据目录 |
+
+---
+
 ## 安全注意事项
 
 - lingti-bot 提供对本地系统的访问能力，请在可信环境中使用

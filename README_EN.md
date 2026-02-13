@@ -248,7 +248,7 @@ cron_create(
 - `0 0 1 * *` - First day of every month
 - `30 8-18 * * *` - Every hour from 8:30 to 18:30
 
-Task configuration saved to `~/.lingti/crons.json`, auto-resume after MCP service restart.
+Task configuration saved to `~/.lingti.db` (SQLite), auto-resume after MCP service restart.
 
 ### Skills — Modular Capability Packs
 
