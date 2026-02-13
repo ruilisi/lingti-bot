@@ -555,8 +555,12 @@ func runRouter(cmd *cobra.Command, args []string) {
 	if err != nil {
 		homeDir = os.TempDir()
 	}
-	cronPath := filepath.Join(homeDir, ".lingti", "crons.json")
-	cronStore := cronpkg.NewStore(cronPath)
+	cronPath := filepath.Join(homeDir, ".lingti.db")
+	cronStore, err := cronpkg.NewStore(cronPath)
+	if err != nil {
+		logger.Error("Failed to open cron store: %v", err)
+		os.Exit(1)
+	}
 	cronNotifier := agent.NewRouterCronNotifier(r)
 	cronScheduler := cronpkg.NewScheduler(cronStore, aiAgent, aiAgent, cronNotifier)
 	aiAgent.SetCronScheduler(cronScheduler)

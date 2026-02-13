@@ -493,11 +493,31 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 	}
 
 	// Handle tool use if needed
+	const maxToolRounds = 10
 	var pendingFiles []router.FileAttachment
-	for resp.FinishReason == "tool_use" {
-		// Process tool calls
+	toolCallCounts := map[string]int{} // track per-tool call counts
+	for round := range maxToolRounds {
+		if resp.FinishReason != "tool_use" {
+			break
+		}
+
+		// Process tool calls and track counts
+		for _, tc := range resp.ToolCalls {
+			toolCallCounts[tc.Name]++
+			if toolCallCounts[tc.Name] > 1 {
+				logger.Warn("[Agent] Tool %s called %d times (round %d/%d, user: %s)", tc.Name, toolCallCounts[tc.Name], round+1, maxToolRounds, msg.Username)
+			}
+		}
+
 		toolResults, files := a.processToolCalls(ctx, resp.ToolCalls)
 		pendingFiles = append(pendingFiles, files...)
+
+		// Log tool results that look like errors
+		for _, result := range toolResults {
+			if result.IsError || strings.HasPrefix(result.Content, "Error") {
+				logger.Warn("[Agent] Tool error (round %d/%d): %s", round+1, maxToolRounds, result.Content)
+			}
+		}
 
 		// Add assistant response with tool calls
 		messages = append(messages, Message{
@@ -524,6 +544,9 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 		if err != nil {
 			return router.Response{}, fmt.Errorf("AI error: %w", err)
 		}
+	}
+	if resp.FinishReason == "tool_use" {
+		logger.Warn("[Agent] Tool loop hit max rounds (%d), forcing stop (user: %s)", maxToolRounds, msg.Username)
 	}
 
 	// Save conversation to memory
@@ -1219,7 +1242,7 @@ func (a *Agent) processToolCalls(ctx context.Context, toolCalls []ToolCall) ([]T
 		results = append(results, ToolResult{
 			ToolCallID: tc.ID,
 			Content:    result,
-			IsError:    false,
+			IsError:    strings.HasPrefix(result, "Error"),
 		})
 	}
 

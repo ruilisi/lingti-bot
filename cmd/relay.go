@@ -321,8 +321,11 @@ func runRelay(cmd *cobra.Command, args []string) {
 	if err != nil {
 		homeDir = os.TempDir()
 	}
-	cronPath := filepath.Join(homeDir, ".lingti", "crons.json")
-	cronStore := cronpkg.NewStore(cronPath)
+	cronPath := filepath.Join(homeDir, ".lingti.db")
+	cronStore, err := cronpkg.NewStore(cronPath)
+	if err != nil {
+		log.Fatalf("Failed to open cron store: %v", err)
+	}
 	cronNotifier := agent.NewRouterCronNotifier(r)
 	cronScheduler := cronpkg.NewScheduler(cronStore, aiAgent, aiAgent, cronNotifier)
 	aiAgent.SetCronScheduler(cronScheduler)

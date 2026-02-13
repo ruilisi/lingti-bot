@@ -55,10 +55,12 @@ func NewServer() *Server {
 		log.Printf("[CRON] Warning: Failed to get home directory: %v", err)
 		homeDir = os.TempDir()
 	}
-	cronDir := filepath.Join(homeDir, ".lingti")
-	cronPath := filepath.Join(cronDir, "crons.json")
-
-	cronStore := cronpkg.NewStore(cronPath)
+	cronPath := filepath.Join(homeDir, ".lingti.db")
+	cronStore, err := cronpkg.NewStore(cronPath)
+	if err != nil {
+		log.Printf("[CRON] Warning: Failed to open cron store: %v", err)
+		cronStore, _ = cronpkg.NewStore(filepath.Join(os.TempDir(), "lingti.db"))
+	}
 	s.cronScheduler = cronpkg.NewScheduler(cronStore, s, nil, s)
 
 	// Register cron tools

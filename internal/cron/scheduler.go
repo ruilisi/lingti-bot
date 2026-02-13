@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -51,6 +52,15 @@ func NewScheduler(store *Store, toolExecutor ToolExecutor, promptExecutor Prompt
 	}
 }
 
+// normalizeCron prepends "0 " to standard 5-field cron expressions
+// so they work with the 6-field (with seconds) parser.
+func normalizeCron(schedule string) string {
+	if len(strings.Fields(schedule)) == 5 {
+		return "0 " + schedule
+	}
+	return schedule
+}
+
 // Start loads jobs from storage and starts the scheduler
 func (s *Scheduler) Start() error {
 	// Load jobs from disk
@@ -76,22 +86,15 @@ func (s *Scheduler) Start() error {
 	return nil
 }
 
-// Stop stops the scheduler and saves jobs
+// Stop stops the scheduler and closes the store
 func (s *Scheduler) Stop() error {
 	// Stop the cron scheduler
 	ctx := s.cron.Stop()
 	<-ctx.Done()
 
-	// Save jobs to disk
-	s.mu.RLock()
-	jobs := make([]*Job, 0, len(s.jobs))
-	for _, job := range s.jobs {
-		jobs = append(jobs, job)
-	}
-	s.mu.RUnlock()
-
-	if err := s.store.Save(jobs); err != nil {
-		return fmt.Errorf("failed to save jobs: %w", err)
+	// Close the database
+	if err := s.store.Close(); err != nil {
+		return fmt.Errorf("failed to close store: %w", err)
 	}
 
 	log.Printf("[CRON] Scheduler stopped")
@@ -134,8 +137,12 @@ func (s *Scheduler) AddJobWithPrompt(name, schedule, prompt, platform, channelID
 
 // addJob validates and schedules a job
 func (s *Scheduler) addJob(job *Job) (*Job, error) {
-	// Validate cron expression
-	if _, err := cron.ParseStandard(job.Schedule); err != nil {
+	// Normalize 5-field cron to 6-field (our cron instance uses WithSeconds)
+	job.Schedule = normalizeCron(job.Schedule)
+
+	// Validate cron expression using the 6-field (with seconds) parser
+	parser := cron.NewParser(cron.Second | cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+	if _, err := parser.Parse(job.Schedule); err != nil {
 		return nil, fmt.Errorf("invalid cron expression: %w", err)
 	}
 
@@ -156,9 +163,9 @@ func (s *Scheduler) addJob(job *Job) (*Job, error) {
 		return nil, fmt.Errorf("failed to schedule job: %w", err)
 	}
 
-	// Save to disk
-	if err := s.saveJobs(); err != nil {
-		log.Printf("[CRON] Failed to save jobs: %v", err)
+	// Save to database
+	if err := s.store.SaveJob(job); err != nil {
+		log.Printf("[CRON] Failed to save job: %v", err)
 	}
 
 	log.Printf("[CRON] Job created: %s (%s) - schedule: %s, tool: %s", job.ID, job.Name, job.Schedule, job.Tool)
@@ -183,9 +190,9 @@ func (s *Scheduler) RemoveJob(id string) error {
 	// Remove from jobs map
 	delete(s.jobs, id)
 
-	// Save to disk
-	if err := s.saveJobsLocked(); err != nil {
-		log.Printf("[CRON] Failed to save jobs: %v", err)
+	// Delete from database
+	if err := s.store.DeleteJob(id); err != nil {
+		log.Printf("[CRON] Failed to delete job: %v", err)
 	}
 
 	log.Printf("[CRON] Job removed: %s (%s)", job.ID, job.Name)
@@ -214,9 +221,9 @@ func (s *Scheduler) PauseJob(id string) error {
 
 	job.Enabled = false
 
-	// Save to disk
-	if err := s.saveJobsLocked(); err != nil {
-		log.Printf("[CRON] Failed to save jobs: %v", err)
+	// Save to database
+	if err := s.store.SaveJob(job); err != nil {
+		log.Printf("[CRON] Failed to save job: %v", err)
 	}
 
 	log.Printf("[CRON] Job paused: %s (%s)", job.ID, job.Name)
@@ -249,9 +256,9 @@ func (s *Scheduler) ResumeJob(id string) error {
 		return fmt.Errorf("failed to schedule job: %w", err)
 	}
 
-	// Save to disk
-	if err := s.saveJobsLocked(); err != nil {
-		log.Printf("[CRON] Failed to save jobs: %v", err)
+	// Save to database
+	if err := s.store.SaveJob(job); err != nil {
+		log.Printf("[CRON] Failed to save job: %v", err)
 	}
 
 	log.Printf("[CRON] Job resumed: %s (%s)", job.ID, job.Name)
@@ -315,8 +322,8 @@ func (s *Scheduler) executeJob(job *Job) {
 			}
 		}
 
-		if err := s.saveJobs(); err != nil {
-			log.Printf("[CRON] Failed to save jobs: %v", err)
+		if err := s.store.SaveJob(job); err != nil {
+			log.Printf("[CRON] Failed to save job: %v", err)
 		}
 		return
 	}
@@ -334,8 +341,8 @@ func (s *Scheduler) executeJob(job *Job) {
 			job.LastError = "prompt executor not available"
 			s.mu.Unlock()
 			log.Printf("[CRON] Job failed: %s (%s) - prompt executor not available", job.ID, job.Name)
-			if err := s.saveJobs(); err != nil {
-				log.Printf("[CRON] Failed to save jobs: %v", err)
+			if err := s.store.SaveJob(job); err != nil {
+				log.Printf("[CRON] Failed to save job: %v", err)
 			}
 			return
 		}
@@ -365,8 +372,8 @@ func (s *Scheduler) executeJob(job *Job) {
 			}
 		}
 
-		if err := s.saveJobs(); err != nil {
-			log.Printf("[CRON] Failed to save jobs: %v", err)
+		if err := s.store.SaveJob(job); err != nil {
+			log.Printf("[CRON] Failed to save job: %v", err)
 		}
 		return
 	}
@@ -409,25 +416,9 @@ func (s *Scheduler) executeJob(job *Job) {
 		log.Printf("[CRON] Job completed: %s (%s)%s", job.ID, job.Name, resultStr)
 	}
 
-	if err := s.saveJobs(); err != nil {
-		log.Printf("[CRON] Failed to save jobs: %v", err)
+	if err := s.store.SaveJob(job); err != nil {
+		log.Printf("[CRON] Failed to save job: %v", err)
 	}
-}
-
-// saveJobs saves all jobs to disk (with lock)
-func (s *Scheduler) saveJobs() error {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	return s.saveJobsLocked()
-}
-
-// saveJobsLocked saves all jobs to disk (caller must hold lock)
-func (s *Scheduler) saveJobsLocked() error {
-	jobs := make([]*Job, 0, len(s.jobs))
-	for _, job := range s.jobs {
-		jobs = append(jobs, job)
-	}
-	return s.store.Save(jobs)
 }
 
 // countEnabled returns the number of enabled jobs
