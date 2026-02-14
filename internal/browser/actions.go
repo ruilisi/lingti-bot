@@ -119,26 +119,65 @@ func Hover(page *rod.Page, b *Browser, ref int) error {
 }
 
 // ClickAll clicks every element matching the CSS selector with a delay between each.
+// It scrolls down repeatedly to find new elements, stopping only when no more appear.
+// Elements matching skipSelector are skipped (e.g. already-liked items).
 // Returns the number of elements successfully clicked.
-func ClickAll(page *rod.Page, selector string, delay time.Duration) (int, error) {
-	elements, err := page.Elements(selector)
-	if err != nil {
-		return 0, fmt.Errorf("failed to find elements matching %q: %w", selector, err)
-	}
-
+func ClickAll(page *rod.Page, selector string, delay time.Duration, skipSelector string) (int, error) {
 	clicked := 0
-	for _, el := range elements {
-		_ = el.ScrollIntoView()
-		time.Sleep(200 * time.Millisecond)
+	seen := map[string]bool{} // track by outerHTML to avoid re-processing
 
-		if err := el.Click(proto.InputMouseButtonLeft, 1); err != nil {
-			// Skip unclickable elements (hidden, covered, etc.)
-			continue
+	for {
+		elements, err := page.Elements(selector)
+		if err != nil {
+			return clicked, fmt.Errorf("failed to find elements matching %q: %w", selector, err)
 		}
-		clicked++
 
-		if delay > 0 {
-			time.Sleep(delay)
+		newClicks := 0
+		for _, el := range elements {
+			// Deduplicate by object remote ID
+			objID := fmt.Sprintf("%p", el)
+			html, _ := el.HTML()
+			key := html
+			if key == "" {
+				key = objID
+			}
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+
+			// Skip elements matching the skip selector (e.g. already active/liked)
+			if skipSelector != "" {
+				matched, _ := el.Eval(`(sel) => this.matches(sel) || this.querySelector(sel) !== null`, skipSelector)
+				if matched != nil && matched.Value.Bool() {
+					continue
+				}
+			}
+
+			_ = el.ScrollIntoView()
+			time.Sleep(200 * time.Millisecond)
+
+			if err := el.Click(proto.InputMouseButtonLeft, 1); err != nil {
+				continue
+			}
+			clicked++
+			newClicks++
+
+			if delay > 0 {
+				time.Sleep(delay)
+			}
+		}
+
+		// Scroll down to load more content
+		_ = page.Mouse.Scroll(0, 800, 0)
+		time.Sleep(1500 * time.Millisecond)
+		_ = page.WaitStable(500 * time.Millisecond)
+
+		// Check if new elements appeared after scrolling
+		newElements, _ := page.Elements(selector)
+		if len(newElements) <= len(elements) && newClicks == 0 {
+			// No new elements and nothing new was clicked — we're done
+			break
 		}
 	}
 

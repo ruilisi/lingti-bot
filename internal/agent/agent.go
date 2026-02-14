@@ -466,10 +466,10 @@ Always simulate real user behavior: navigate to the base URL first, then use the
 - document.querySelector('.dialog-close-btn').click()
 Then re-snapshot and continue.
 
-**Batch actions (like/follow/favorite):** Use browser_click_all with CSS selectors. For Chinese sites (小红书/抖音/微博), try these selectors DIRECTLY without inspecting first:
-- 点赞 (like) → browser_click_all with selector ".like-wrapper"
-- 收藏 (favorite) → browser_click_all with selector "[class*='collect']"
-- 关注 (follow) → browser_click_all with selector "[class*='follow']"
+**Batch actions (like/follow/favorite):** When the user asks to like/点赞, follow/关注, or favorite/收藏 "all" content, you MUST use browser_click_all — NEVER try to click individual refs from snapshot. This applies regardless of how the user phrases it (markdown list, comma-separated, or prose). browser_click_all automatically scrolls and keeps clicking until no new elements appear. Use skip_selector to avoid toggling already-active items. For Chinese sites (小红书/抖音/微博), try these selectors DIRECTLY without inspecting first:
+- 点赞 (like) → browser_click_all with selector ".like-wrapper", skip_selector ".like-wrapper.active, .like-wrapper.liked"
+- 收藏 (favorite) → browser_click_all with selector "[class*='collect']", skip_selector "[class*='collect'].active"
+- 关注 (follow) → browser_click_all with selector "[class*='follow']", skip_selector "[class*='follow'].active"
 If click count is 0, inspect with: return Array.from(document.querySelectorAll('span,button')).filter(e=>e.children.length<5).slice(0,10).map(e=>e.className+' | '+e.textContent.trim().slice(0,15)).join('\n')
 Do NOT waste rounds — try clicking first, inspect only if it fails.
 
@@ -1122,12 +1122,13 @@ func (a *Agent) buildToolsList() []Tool {
 		},
 		{
 			Name:        "browser_click_all",
-			Description: "Click ALL elements matching a CSS selector. Uses real mouse clicks with configurable delay. Inspect DOM first with browser_execute_js to find the right selector. Common: 点赞→.like-wrapper, 收藏→[class*='collect'], 关注→[class*='follow'].",
+			Description: "Click ALL elements matching a CSS selector. Automatically scrolls down to load more and keeps clicking until no new elements appear. Use skip_selector to skip already-active elements (e.g. already liked). Common: 点赞→selector '.like-wrapper', skip '.like-wrapper.liked' or '.like-wrapper.active'.",
 			InputSchema: jsonSchema(map[string]any{
 				"type": "object",
 				"properties": map[string]any{
-					"selector": map[string]string{"type": "string", "description": "CSS selector for elements to click (e.g. '.like-lottie')"},
-					"delay_ms": map[string]string{"type": "number", "description": "Milliseconds to wait between clicks (default: 500)"},
+					"selector":      map[string]string{"type": "string", "description": "CSS selector for elements to click (e.g. '.like-wrapper')"},
+					"skip_selector": map[string]string{"type": "string", "description": "CSS selector to skip already-active elements (e.g. '.like-wrapper.active' to skip already-liked). Matches element itself or its children."},
+					"delay_ms":      map[string]string{"type": "number", "description": "Milliseconds to wait between clicks (default: 500)"},
 				},
 				"required": []string{"selector"},
 			}),

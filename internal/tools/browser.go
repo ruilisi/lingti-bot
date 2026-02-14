@@ -434,8 +434,13 @@ func BrowserClickAll(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolR
 		return mcp.NewToolResultError(fmt.Sprintf("failed to get page: %v", err)), nil
 	}
 
-	logger.Debug("[browser_click_all] selector=%q delay=%v", selector, delay)
-	count, err := browser.ClickAll(page, selector, delay)
+	skipSelector := ""
+	if s, ok := req.Params.Arguments["skip_selector"].(string); ok {
+		skipSelector = s
+	}
+
+	logger.Debug("[browser_click_all] selector=%q skip=%q delay=%v", selector, skipSelector, delay)
+	count, err := browser.ClickAll(page, selector, delay, skipSelector)
 	if err != nil {
 		logger.Debug("[browser_click_all] failed: %v", err)
 		return mcp.NewToolResultError(fmt.Sprintf("failed to click elements: %v", err)), nil
