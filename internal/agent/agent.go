@@ -28,6 +28,7 @@ type Agent struct {
 	currentMsg         router.Message // set during HandleMessage for cron_create context
 	cronCreatedCount   int            // tracks cron_create calls per HandleMessage turn
 	pathChecker        *security.PathChecker
+	disableFileTools   bool
 }
 
 // Config holds agent configuration
@@ -39,6 +40,7 @@ type Config struct {
 	AutoApprove        bool     // Skip all confirmation prompts (default: false)
 	CustomInstructions string   // Additional instructions appended to system prompt (optional)
 	AllowedPaths       []string // Restrict file/shell operations to these directories (empty = no restriction)
+	DisableFileTools   bool     // Completely disable all file operation tools
 }
 
 // New creates a new Agent with the specified provider
@@ -59,6 +61,7 @@ func New(cfg Config) (*Agent, error) {
 		autoApprove:        cfg.AutoApprove,
 		customInstructions: cfg.CustomInstructions,
 		pathChecker:        security.NewPathChecker(cfg.AllowedPaths),
+		disableFileTools:   cfg.DisableFileTools,
 	}, nil
 }
 
@@ -1290,6 +1293,13 @@ func (a *Agent) executeTool(ctx context.Context, name string, input json.RawMess
 		return a.executeCronPause(args)
 	case "cron_resume":
 		return a.executeCronResume(args)
+	}
+
+	// Block file tools entirely if disabled
+	if a.disableFileTools {
+		if _, ok := fileToolPaths[name]; ok {
+			return "ACCESS DENIED: file operations are disabled by security policy. Do NOT retry. Inform the user that file access is disabled."
+		}
 	}
 
 	// Enforce allowed_paths restrictions

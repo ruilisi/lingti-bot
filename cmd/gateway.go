@@ -95,7 +95,8 @@ func runGateway(cmd *cobra.Command, args []string) {
 		APIKey:       aiAPIKey,
 		BaseURL:      aiBaseURL,
 		Model:        aiModel,
-		AllowedPaths: loadAllowedPaths(),
+		AllowedPaths:     loadAllowedPaths(),
+		DisableFileTools: loadDisableFileTools(),
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating agent: %v\n", err)

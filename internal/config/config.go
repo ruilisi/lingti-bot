@@ -182,6 +182,7 @@ type SecurityConfig struct {
 	AllowedPaths        []string `yaml:"allowed_paths"`
 	BlockedCommands     []string `yaml:"blocked_commands"`
 	RequireConfirmation []string `yaml:"require_confirmation"`
+	DisableFileTools    bool     `yaml:"disable_file_tools"`
 }
 
 type LoggingConfig struct {

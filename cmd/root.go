@@ -6,12 +6,14 @@ import (
 
 	"github.com/pltanton/lingti-bot/internal/config"
 	"github.com/pltanton/lingti-bot/internal/logger"
+	"github.com/pltanton/lingti-bot/internal/mcp"
 	"github.com/spf13/cobra"
 )
 
 var (
-	logLevel    string
-	autoApprove bool
+	logLevel         string
+	autoApprove      bool
+	disableFileTools bool
 )
 
 var rootCmd = &cobra.Command{
@@ -42,6 +44,8 @@ func init() {
 		"Log level: trace, debug, info, warn, error, fatal, panic")
 	rootCmd.PersistentFlags().BoolVarP(&autoApprove, "yes", "y", false,
 		"Automatically approve all operations without prompting (skip security checks)")
+	rootCmd.PersistentFlags().BoolVar(&disableFileTools, "no-files", false,
+		"Disable all file operation tools")
 }
 
 // IsAutoApprove returns true if auto-approve mode is enabled globally
@@ -55,6 +59,29 @@ func loadAllowedPaths() []string {
 		return cfg.Security.AllowedPaths
 	}
 	return nil
+}
+
+// loadDisableFileTools returns true if file tools are disabled via flag or config.
+func loadDisableFileTools() bool {
+	if disableFileTools {
+		return true
+	}
+	if cfg, err := config.Load(); err == nil {
+		return cfg.Security.DisableFileTools
+	}
+	return false
+}
+
+// loadSecurityOptions returns MCP security options from config file.
+func loadSecurityOptions() mcp.SecurityOptions {
+	cfg, err := config.Load()
+	if err != nil {
+		return mcp.SecurityOptions{}
+	}
+	return mcp.SecurityOptions{
+		AllowedPaths:     cfg.Security.AllowedPaths,
+		DisableFileTools: cfg.Security.DisableFileTools,
+	}
 }
 
 func Execute() {

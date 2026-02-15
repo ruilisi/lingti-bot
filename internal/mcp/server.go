@@ -27,14 +27,21 @@ type Server struct {
 	mcpServer     *server.MCPServer
 	cronScheduler *cronpkg.Scheduler
 	toolHandlers  map[string]ToolHandler
-	pathChecker   *security.PathChecker
+	pathChecker      *security.PathChecker
+	disableFileTools bool
+}
+
+// SecurityOptions holds security settings for the MCP server.
+type SecurityOptions struct {
+	AllowedPaths     []string
+	DisableFileTools bool
 }
 
 // NewServer creates a new MCP server with all tools registered
-func NewServer(allowedPaths ...[]string) *Server {
-	var paths []string
-	if len(allowedPaths) > 0 {
-		paths = allowedPaths[0]
+func NewServer(opts ...SecurityOptions) *Server {
+	var opt SecurityOptions
+	if len(opts) > 0 {
+		opt = opts[0]
 	}
 	s := &Server{
 		mcpServer: server.NewMCPServer(ServerName, ServerVersion,
@@ -42,8 +49,9 @@ func NewServer(allowedPaths ...[]string) *Server {
 			server.WithPromptCapabilities(true),
 			server.WithToolCapabilities(true),
 		),
-		toolHandlers: make(map[string]ToolHandler),
-		pathChecker:  security.NewPathChecker(paths),
+		toolHandlers:     make(map[string]ToolHandler),
+		pathChecker:      security.NewPathChecker(opt.AllowedPaths),
+		disableFileTools: opt.DisableFileTools,
 	}
 
 	// Register all tools
@@ -152,8 +160,14 @@ var pathCheckedTools = map[string]string{
 // addTool is a helper to add a tool and track its handler
 func (s *Server) addTool(tool mcp.Tool, handler ToolHandler) {
 	wrappedHandler := handler
-	if pathKey, ok := pathCheckedTools[tool.Name]; ok {
-		wrappedHandler = s.wrapPathCheck(pathKey, handler)
+	if _, ok := pathCheckedTools[tool.Name]; ok {
+		if s.disableFileTools {
+			wrappedHandler = func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+				return mcp.NewToolResultError("ACCESS DENIED: file operations are disabled by security policy. Do NOT retry. Inform the user that file access is disabled."), nil
+			}
+		} else {
+			wrappedHandler = s.wrapPathCheck("path", handler)
+		}
 	} else if tool.Name == "shell_execute" {
 		wrappedHandler = s.wrapPathCheck("working_directory", handler)
 	}

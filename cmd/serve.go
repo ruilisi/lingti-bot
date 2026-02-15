@@ -14,7 +14,7 @@ var serveCmd = &cobra.Command{
 	Short: "Start the MCP server",
 	Long:  `Start the MCP server and listen for requests via stdio.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		s := mcp.NewServer(loadAllowedPaths())
+		s := mcp.NewServer(loadSecurityOptions())
 		defer s.Stop()
 
 		// Serve over stdio (default MCP transport)
