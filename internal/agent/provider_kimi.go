@@ -119,9 +119,13 @@ func (p *KimiProvider) toOpenAIMessage(msg Message) openai.ChatCompletionMessage
 	switch msg.Role {
 	case "user":
 		if msg.ToolResult != nil {
+			content := msg.ToolResult.Content
+			if content == "" {
+				content = "(empty)"
+			}
 			return openai.ChatCompletionMessage{
 				Role:       openai.ChatMessageRoleTool,
-				Content:    msg.ToolResult.Content,
+				Content:    content,
 				ToolCallID: msg.ToolResult.ToolCallID,
 			}
 		}
@@ -151,9 +155,16 @@ func (p *KimiProvider) toOpenAIMessage(msg Message) openai.ChatCompletionMessage
 		return m
 
 	case "tool":
+		content := msg.Content
+		if content == "" && msg.ToolResult != nil {
+			content = msg.ToolResult.Content
+		}
+		if content == "" {
+			content = "(empty)"
+		}
 		return openai.ChatCompletionMessage{
 			Role:       openai.ChatMessageRoleTool,
-			Content:    msg.Content,
+			Content:    content,
 			ToolCallID: msg.ToolResult.ToolCallID,
 		}
 
