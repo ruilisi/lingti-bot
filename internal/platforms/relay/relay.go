@@ -72,6 +72,7 @@ type Platform struct {
 	// KF sync cursor per open_kfid
 	kfCursors   map[string]string
 	kfCursorsMu sync.Mutex
+	kfEnabled   bool
 }
 
 // Protocol message types
@@ -204,8 +205,15 @@ func New(cfg Config) (*Platform, error) {
 			p.wecomPlatform = wp
 			log.Printf("[Relay] WeCom media API enabled")
 
-			// Initialize KF cursors to skip historical messages
-			go p.initKfCursors()
+			// Check if KF messaging is available
+			if p.wecomPlatform.CheckKfAvailable() {
+				p.kfEnabled = true
+				log.Printf("[Relay] WeCom KF messaging enabled")
+				// Initialize KF cursors to skip historical messages
+				go p.initKfCursors()
+			} else {
+				log.Printf("[Relay] WeCom KF messaging not available (no permission)")
+			}
 		}
 	}
 
@@ -830,8 +838,7 @@ func (p *Platform) initKfCursors() {
 
 // handleKfEvent processes a kf_msg_or_event by calling sync_msg to fetch actual messages
 func (p *Platform) handleKfEvent(token string) {
-	if p.wecomPlatform == nil {
-		log.Printf("[Relay] Cannot handle kf event: WeCom platform not initialized")
+	if p.wecomPlatform == nil || !p.kfEnabled {
 		return
 	}
 

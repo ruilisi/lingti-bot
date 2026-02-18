@@ -554,6 +554,12 @@ func (p *Platform) ListKfAccounts() ([]KfAccount, error) {
 	return result.AccountList, nil
 }
 
+// CheckKfAvailable attempts to list KF accounts and returns true if KF is available
+func (p *Platform) CheckKfAvailable() bool {
+	_, err := p.ListKfAccounts()
+	return err == nil
+}
+
 // KfAccount represents a customer service account
 type KfAccount struct {
 	OpenKfID string `json:"open_kfid"`
