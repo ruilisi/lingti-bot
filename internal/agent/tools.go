@@ -31,6 +31,22 @@ func executeSystemInfo(ctx context.Context) string {
 	return extractText(result)
 }
 
+// executeProcessList runs the process_list tool
+func executeProcessList(ctx context.Context, args map[string]any) string {
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]interface{}{}
+	if filter, ok := args["filter"].(string); ok {
+		req.Params.Arguments["filter"] = filter
+	}
+
+	result, err := tools.ProcessList(ctx, req)
+	if err != nil {
+		return "Error: " + err.Error()
+	}
+
+	return extractText(result)
+}
+
 // executeCalendarToday runs the calendar_today tool
 func executeCalendarToday(ctx context.Context) string {
 	req := mcp.CallToolRequest{}

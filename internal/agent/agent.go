@@ -1527,6 +1527,8 @@ func callToolDirect(ctx context.Context, name string, args map[string]any) strin
 	// System
 	case "system_info":
 		return executeSystemInfo(ctx)
+	case "process_list":
+		return executeProcessList(ctx, args)
 	case "shell_execute":
 		cmd := ""
 		if c, ok := args["command"].(string); ok {
