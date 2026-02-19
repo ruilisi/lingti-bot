@@ -136,6 +136,8 @@ browser_screenshot path="/tmp/zhihu-result.png"
 14 个浏览器工具覆盖完整自动化流程：生命周期管理、导航、无障碍树快照、点击/输入/按键、JavaScript 执行、批量操作、多标签页管理、截图。
 
 > 📖 **完整使用指南、连接配置、故障排除：[浏览器自动化文档](docs/browser-automation.md)**
+>
+> 📋 **AI 操作规则详解（快照法则、搜索行为、弹窗处理、批量操作等）：[浏览器 AI 操作规则](docs/browser-agent-rules.md)**
 
 ---
 
@@ -678,6 +680,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 - [文件发送指南](docs/file-sending.md) - 各平台文件传输能力、配置与限制
 - [定时任务指南](docs/cron-jobs.md) - AI 智能任务 vs 静态消息、Cron 表达式、管理命令
 - [浏览器自动化指南](docs/browser-automation.md) - CDP 引擎、接管已有 Chrome、14 个工具完整参考、典型场景与故障排除
+- [浏览器 AI 操作规则](docs/browser-agent-rules.md) - AI agent 的所有浏览器行为规则：快照法则、搜索行为、弹窗处理、批量操作、连接模式、常见错误纠正
 - [OpenClaw 技术特性对比](docs/openclaw-feature-comparison.md) - 详细功能差异分析
 
 ---

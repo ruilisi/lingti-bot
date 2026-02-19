@@ -2,6 +2,8 @@
 
 > lingti-bot 内置完整的浏览器自动化能力，基于 **Chrome DevTools Protocol (CDP)** 和 **go-rod**，采用**快照-操作（Snapshot-then-Act）**模式，让 AI 能够像人一样操作浏览器。
 
+> 📋 **AI agent 操作规则（搜索行为、弹窗处理、批量操作、连接模式等）：[浏览器 AI 操作规则](browser-agent-rules.md)**
+
 ---
 
 ## 核心能力
