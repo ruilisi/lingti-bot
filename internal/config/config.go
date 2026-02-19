@@ -26,6 +26,12 @@ type BrowserConfig struct {
 	// Use "fullscreen" for fullscreen mode, or "WIDTHxHEIGHT" (e.g. "1024x768").
 	// Default: "fullscreen"
 	ScreenSize string `yaml:"screen_size,omitempty"`
+
+	// CDPURL is the Chrome DevTools Protocol address of a running Chrome instance
+	// (e.g. "127.0.0.1:9222"). When set, EnsureRunning connects to this Chrome
+	// instead of launching a new one. The Chrome must be started with
+	// --remote-debugging-port=<port>.
+	CDPURL string `yaml:"cdp_url,omitempty"`
 }
 
 type RelayConfig struct {

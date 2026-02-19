@@ -1,223 +1,527 @@
 # 浏览器自动化
 
-> 基于 go-rod 的纯 Go 浏览器自动化，采用 **快照-操作（Snapshot-then-Act）** 模式
+> lingti-bot 内置完整的浏览器自动化能力，基于 **Chrome DevTools Protocol (CDP)** 和 **go-rod**，采用**快照-操作（Snapshot-then-Act）**模式，让 AI 能够像人一样操作浏览器。
 
-## 概述
+---
 
-lingti-bot 提供 12 个浏览器自动化 MCP 工具，可以程序化控制 Chrome/Brave/Edge 等 Chromium 内核浏览器。设计灵感来自 [OpenClaw](../docs/openclaw-reference.md) 的浏览器工具，但完全使用 Go 实现，无需 Node.js 或 Playwright。
+## 核心能力
 
-### 核心设计：快照-操作模式
+- 控制真实 Chrome/Brave/Edge 浏览器（有界面或无头模式）
+- **连接已有 Chrome** — 无需新开窗口，直接接管正在使用的浏览器
+- 读取页面无障碍树（Accessibility Tree），精准定位元素
+- 点击、输入、按键、滚动、拖拽
+- 多标签页管理
+- 截图（视口或整页）
+- 执行任意 JavaScript
+- 批量点击（适合爬取、批量操作）
 
-```
-1. browser_snapshot  →  获取页面无障碍树，每个可交互元素分配数字编号(ref)
-2. browser_click/type →  使用编号操作对应元素
-3. 页面变化后        →  重新 snapshot 获取新编号
-```
+---
 
-**示例流程：**
+## 连接已有 Chrome（推荐工作流）
 
-```
-[1] textbox "用户名"
-[2] textbox "密码"
-[3] button "登录"
-[4] link "忘记密码？"
-```
+默认情况下，每次触发浏览器时 lingti-bot 会启动一个新的独立 Chrome 窗口。通过以下配置，可以让 bot 直接在你**正在使用的 Chrome 里**开新标签页操作，实现人机共享浏览器。
 
-→ `browser_type ref=1 text="admin"` → `browser_type ref=2 text="password123"` → `browser_click ref=3`
+### 第一步：用调试端口启动 Chrome
 
-### 为什么用快照而不是 CSS 选择器？
+Chrome 必须以 `--remote-debugging-port` 参数启动，才能接受 CDP 连接。
 
-- **稳定性** — 无障碍树不受 CSS 类名变化影响
-- **AI 友好** — AI 模型可以直接理解角色和名称
-- **简洁** — 用数字编号代替冗长的选择器路径
+**macOS：**
 
-## 前置条件
-
-需要安装 Chromium 内核浏览器（Chrome、Brave、Edge 或 Chromium）。lingti-bot 会自动检测已安装的浏览器。
-
-**自动检测顺序：** Chrome → Brave → Edge → Chromium → Chrome Canary
-
-如需指定浏览器路径，在启动时传入 `executable_path` 参数。
-
-## 快速开始
-
-```
-"打开百度首页"                    → browser_navigate url="https://www.baidu.com"
-"看看页面上有什么"                → browser_snapshot
-"点击搜索框并输入 lingti-bot"    → browser_type ref=1 text="lingti-bot"
-"点击搜索按钮"                    → browser_click ref=3
-"截图保存"                        → browser_screenshot
+```bash
+# 新开一个带调试端口的 Chrome 窗口（不影响已有进程）
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.lingti-bot/chrome-profile"
 ```
 
-## 工具参考
+> **推荐：** 使用独立的 `--user-data-dir`，避免与个人 Chrome 账号/扩展产生冲突。
 
-### 生命周期
+**Linux：**
 
-| 工具 | 说明 | 参数 |
+```bash
+google-chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.lingti-bot/chrome-profile"
+```
+
+**验证端口已开放：**
+
+```bash
+curl http://localhost:9222/json/version
+```
+
+成功响应示例：
+
+```json
+{
+  "Browser": "Chrome/121.0.6167.160",
+  "Protocol-Version": "1.3",
+  "webSocketDebuggerUrl": "ws://localhost:9222/devtools/browser/..."
+}
+```
+
+### 第二步：配置 lingti-bot
+
+在 `~/.lingti.yaml` 中添加：
+
+```yaml
+browser:
+  cdp_url: "127.0.0.1:9222"
+```
+
+之后所有 `browser_navigate`、`browser_click` 等操作都会在这个 Chrome 里执行，不再另开新窗口。
+
+### 配置优先级
+
+`EnsureRunning()` 按以下顺序决定使用哪个浏览器：
+
+```
+1. cfg.Browser.CDPURL  （~/.lingti.yaml 中的 cdp_url）
+2. 127.0.0.1:9222      （well-known 默认调试端口，无需配置）
+3. 启动新 Chrome 实例   （fallback）
+```
+
+---
+
+## 快速上手
+
+```
+"打开知乎首页"                        → browser_navigate url="https://www.zhihu.com"
+"看看页面上有什么"                    → browser_snapshot
+"点击搜索框并搜索 Go 语言"           → browser_type ref=3 text="Go 语言" submit=true
+"截图保存"                            → browser_screenshot
+"打开新标签页看看微博"                → browser_tab_open url="https://www.weibo.com"
+```
+
+---
+
+## 工具完整参考
+
+### 生命周期管理
+
+#### `browser_start` — 启动或连接浏览器
+
+| 参数 | 类型 | 说明 |
 |------|------|------|
-| `browser_start` | 启动浏览器 | `headless`(bool), `url`(string), `executable_path`(string) |
-| `browser_stop` | 关闭浏览器 | 无 |
-| `browser_status` | 查看浏览器状态 | 无 |
+| `headless` | bool | 无头模式（无界面），默认 false |
+| `url` | string | 启动后立即导航的 URL |
+| `executable_path` | string | Chrome 可执行文件路径（留空自动检测） |
+| `cdp_url` | string | 连接已有 Chrome 的 CDP 地址（如 `127.0.0.1:9222`） |
 
-### 导航与快照
+```
+# 启动有界面浏览器
+browser_start headless=false
 
-| 工具 | 说明 | 参数 |
-|------|------|------|
-| `browser_navigate` | 导航到指定 URL | `url`(必需) |
-| `browser_snapshot` | 获取页面无障碍快照 | 无 |
-| `browser_screenshot` | 截取页面截图 | `path`(string), `full_page`(bool) |
+# 无头模式
+browser_start headless=true
 
-### 元素操作
+# 连接已有 Chrome（需已用 --remote-debugging-port 启动）
+browser_start cdp_url="127.0.0.1:9222"
 
-| 工具 | 说明 | 参数 |
-|------|------|------|
-| `browser_click` | 点击元素 | `ref`(必需, number) |
-| `browser_type` | 向元素输入文本 | `ref`(必需, number), `text`(必需), `submit`(bool) |
-| `browser_press` | 按下键盘按键 | `key`(必需, 如 "Enter", "Tab", "Escape") |
+# 启动并直接导航
+browser_start url="https://www.zhihu.com"
+```
 
-### 标签页管理
+#### `browser_stop` — 关闭浏览器
 
-| 工具 | 说明 | 参数 |
-|------|------|------|
-| `browser_tabs` | 列出所有标签页 | 无 |
-| `browser_tab_open` | 打开新标签页 | `url`(string) |
-| `browser_tab_close` | 关闭标签页 | `target_id`(string) |
+如果是连接到已有 Chrome（`cdp_url` 模式），只断开连接，**不关闭浏览器**。
 
-## 快照格式详解
+#### `browser_status` — 查看浏览器状态
 
-`browser_snapshot` 返回页面的无障碍树，格式如下：
+返回：
+
+```json
+{
+  "running": true,
+  "headless": false,
+  "connected": true,
+  "pages": 3,
+  "active_url": "https://www.zhihu.com"
+}
+```
+
+`connected: true` 表示当前是连接到已有 Chrome（不是 bot 自己启动的）。
+
+---
+
+### 导航与内容
+
+#### `browser_navigate` — 导航到 URL
+
+```
+browser_navigate url="https://www.baidu.com"
+```
+
+- 自动等待页面加载完成（`load` 事件）
+- 如果浏览器未启动，自动按优先级连接/启动
+
+#### `browser_snapshot` — 获取页面无障碍快照
+
+返回页面的可交互元素列表，每个元素带数字编号（ref）：
 
 ```
 [1] link "首页"
-[2] link "新闻"
+[2] link "发现"
 [3] textbox "搜索"
-[4] button "百度一下"
-[5] link "更多"
-  [6] link "地图"
-  [7] link "视频"
+[4] button "搜索"
+[5] heading "今日推荐"
+  [6] link "为什么 Go 语言这么流行？"
+  [7] link "深度学习入门指南"
 ```
 
-**规则：**
-- 每个可交互元素分配一个数字编号 `[ref]`
-- 显示元素的角色（role）和名称（name）
+**ref 规则：**
+- 每次 snapshot 重新编号，导航后必须重新 snapshot
+- 只包含可交互元素和重要内容节点
 - 缩进表示层级关系
-- 忽略不可见和装饰性元素
-- **编号在页面导航后失效**，需要重新执行 `browser_snapshot`
 
-## 配置
+#### `browser_screenshot` — 截图
 
-### 无头模式（Headless）
-
-默认以无头模式启动（无可见窗口）。设置 `headless=false` 可显示浏览器窗口：
-
-```
-browser_start headless=false
-```
-
-### 自定义浏览器路径
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `path` | string | 保存路径，默认 `~/Desktop/browser_screenshot_<时间戳>.png` |
+| `full_page` | bool | true = 整页截图，false = 当前视口，默认 false |
 
 ```
-browser_start executable_path="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+browser_screenshot
+browser_screenshot path="/tmp/result.png" full_page=true
 ```
 
-### 数据目录
+---
 
-浏览器数据（Cookie、缓存等）默认存储在 `~/.lingti-bot/browser/`，与个人浏览器完全隔离。
+### 元素交互
 
-## 使用示例
+> 所有交互工具都需要先执行 `browser_snapshot` 获取 ref 编号。
 
-### 网页信息采集
+#### `browser_click` — 点击元素
 
 ```
-1. browser_navigate url="https://news.example.com"
+browser_click ref=4
+```
+
+- 自动滚动到元素可见位置
+- 等待元素可交互
+- ref 失效时自动重新 snapshot 并重试一次
+
+#### `browser_type` — 输入文本
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `ref` | number | 必需，元素 ref 编号 |
+| `text` | string | 必需，输入内容 |
+| `submit` | bool | true = 输入后按 Enter，默认 false |
+
+```
+browser_type ref=3 text="lingti-bot"
+browser_type ref=3 text="搜索内容" submit=true
+```
+
+#### `browser_press` — 按键
+
+支持的按键：
+
+| 按键名 | 说明 |
+|--------|------|
+| `Enter` | 回车 |
+| `Tab` | 制表符 / 切换焦点 |
+| `Escape` | 取消 |
+| `Backspace` | 退格 |
+| `Delete` | 删除 |
+| `Space` | 空格 |
+| `ArrowUp/Down/Left/Right` | 方向键 |
+| `Home` / `End` | 行首 / 行尾 |
+| `PageUp` / `PageDown` | 翻页 |
+
+```
+browser_press key="Enter"
+browser_press key="Tab"
+browser_press key="Escape"
+```
+
+#### `browser_execute_js` — 执行 JavaScript
+
+```
+browser_execute_js script="return document.title"
+browser_execute_js script="window.scrollTo(0, document.body.scrollHeight)"
+browser_execute_js script="return document.querySelectorAll('a').length"
+```
+
+#### `browser_click_all` — 批量点击
+
+适合批量操作（如全选、批量关闭通知等）。
+
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `selector` | string | CSS 选择器，匹配要点击的元素 |
+| `delay_ms` | number | 每次点击间隔毫秒数，默认 500 |
+| `skip_selector` | string | 跳过匹配此选择器的元素（可选） |
+
+```
+browser_click_all selector=".notification-item .close-btn" delay_ms=200
+```
+
+---
+
+### 标签页管理
+
+#### `browser_tabs` — 列出所有标签页
+
+```json
+[
+  {"target_id": "abc123", "url": "https://www.zhihu.com", "title": "知乎"},
+  {"target_id": "def456", "url": "https://www.weibo.com", "title": "微博"}
+]
+```
+
+#### `browser_tab_open` — 打开新标签页
+
+```
+browser_tab_open url="https://www.weibo.com"
+browser_tab_open                              # 打开空白标签页
+```
+
+#### `browser_tab_close` — 关闭标签页
+
+```
+browser_tab_close target_id="abc123"
+browser_tab_close                             # 关闭当前活跃标签页
+```
+
+---
+
+## 典型使用场景
+
+### 场景一：信息查询
+
+```
+用户: "帮我查一下今天的 BTC 价格"
+
+bot:
+1. browser_navigate url="https://www.coindesk.com"
 2. browser_snapshot
-   → 看到 [1] heading "今日头条" [2] link "科技新闻" ...
-3. browser_click ref=2
-4. browser_snapshot
-   → 看到新页面内容
-5. browser_screenshot path="/tmp/news.png"
+   → [1] heading "Bitcoin Price" [2] text "$67,234.50" ...
+3. 直接返回价格信息，无需截图
 ```
 
-### 表单填写
+### 场景二：登录并操作
 
 ```
+用户: "帮我登录知乎并关注 xxx"
+
+bot:
+1. browser_navigate url="https://www.zhihu.com/signin"
+2. browser_snapshot
+   → [1] textbox "手机号或邮箱" [2] textbox "密码" [3] button "登录"
+3. browser_type ref=1 text="your@email.com"
+4. browser_type ref=2 text="yourpassword"
+5. browser_click ref=3
+6. browser_navigate url="https://www.zhihu.com/people/xxx"
+7. browser_snapshot
+   → [N] button "关注"
+8. browser_click ref=N
+```
+
+### 场景三：网页内容提取
+
+```
+用户: "抓取这个页面所有文章标题"
+
+bot:
+1. browser_navigate url="https://example.com/blog"
+2. browser_snapshot
+   → 看到所有 heading 和 link 元素
+3. 直接从快照中提取标题信息，返回列表
+```
+
+### 场景四：表单填写
+
+```
+用户: "帮我填写这个报名表"
+
+bot:
 1. browser_navigate url="https://example.com/register"
 2. browser_snapshot
-   → [1] textbox "邮箱" [2] textbox "密码" [3] textbox "确认密码" [4] button "注册"
-3. browser_type ref=1 text="user@example.com"
-4. browser_type ref=2 text="mypassword"
-5. browser_type ref=3 text="mypassword"
-6. browser_click ref=4
+3. browser_type ref=1 text="张三"          # 姓名
+4. browser_type ref=2 text="138xxxx1234"   # 手机
+5. browser_type ref=3 text="example@qq.com" # 邮箱
+6. browser_click ref=10                     # 提交按钮
+7. browser_screenshot                       # 截图确认
 ```
 
-### 多标签页操作
+### 场景五：批量操作
 
 ```
-1. browser_start
-2. browser_navigate url="https://example.com"
-3. browser_tab_open url="https://news.example.com"
-4. browser_tabs
-   → 列出所有打开的标签页及其 target_id
-5. browser_tab_close target_id="xxx"
+用户: "把我邮箱里所有营销邮件全部删除"
+
+bot:
+1. browser_navigate url="https://mail.example.com"
+2. browser_snapshot → 找到邮件列表
+3. browser_click_all selector=".email-item.marketing input[type=checkbox]"
+4. browser_click ref=<删除按钮>
 ```
 
-### 键盘快捷键
+### 场景六：监控页面变化
 
 ```
-1. browser_snapshot
-2. browser_click ref=5        # 点击输入框
-3. browser_type ref=5 text="搜索内容"
-4. browser_press key="Enter"  # 按回车提交
+用户: "每隔5分钟截一张这个页面的图"
+
+bot:
+1. browser_navigate url="https://example.com/dashboard"
+2. browser_screenshot path="/tmp/monitor_1.png"
+3. (等待)
+4. browser_screenshot path="/tmp/monitor_2.png"
 ```
+
+---
+
+## 配置参考
+
+`~/.lingti.yaml` 中的 `browser` 配置节：
+
+```yaml
+browser:
+  # 连接已有 Chrome（推荐）
+  # Chrome 需以 --remote-debugging-port=9222 启动
+  cdp_url: "127.0.0.1:9222"
+
+  # 浏览器窗口大小
+  # "fullscreen" = 全屏（默认）
+  # "1920x1080"  = 指定分辨率
+  screen_size: "1920x1080"
+```
+
+---
 
 ## 技术架构
 
 ```
-MCP Tool (internal/tools/browser.go)
-    ↓
-Browser Manager (internal/browser/browser.go)   ← 管理浏览器生命周期
-    ↓
-Snapshot Engine (internal/browser/snapshot.go)   ← 无障碍树 → ref 映射
-Action Engine  (internal/browser/actions.go)     ← ref → DOM 元素 → 交互
-    ↓
-go-rod/rod (CDP)
-    ↓
-Chrome / Brave / Edge
+用户自然语言指令
+      ↓
+  AI Agent（理解意图，规划工具调用序列）
+      ↓
+MCP Tools (internal/tools/browser.go)
+      ↓
+Browser Manager (internal/browser/browser.go)
+  ├── EnsureRunning()   → cdp_url > :9222 > 新启动
+  ├── Start()           → 启动或连接
+  └── ActivePage()      → 获取当前活跃页面
+      ↓
+Snapshot Engine (internal/browser/snapshot.go)
+  └── CDP Accessibility.getFullAXTree → ref 映射
+      ↓
+Action Engine (internal/browser/actions.go)
+  └── ref → BackendDOMNodeID → DOM 元素 → 交互
+      ↓
+go-rod/rod（Chrome DevTools Protocol）
+      ↓
+Chrome / Brave / Edge（有界面 或 无头）
 ```
 
-**关键组件：**
+### 为什么用无障碍树而不是 CSS 选择器？
 
-- **Browser Manager** — 单例模式管理浏览器实例，支持启动、停止、连接已有浏览器
-- **Snapshot Engine** — 调用 CDP `Accessibility.getFullAXTree` 获取完整无障碍树，为可交互元素分配 ref 编号
-- **Action Engine** — 通过 ref 查找对应的 `BackendDOMNodeID`，使用 `DOM.resolveNode` 解析为可操作的 DOM 元素
+| | 无障碍树（本项目） | CSS 选择器 |
+|--|--|--|
+| **稳定性** | 不受样式重构影响 | 类名变化即失效 |
+| **AI 可读性** | role + name 语义清晰 | 需要理解 DOM 结构 |
+| **简洁度** | `[3] button "登录"` | `.login-form > div > button.btn-primary` |
+| **跨站通用** | 标准 ARIA 规范 | 每个网站不同 |
+
+### Ref 生命周期
+
+```
+browser_snapshot      →  生成 ref 映射（存储在内存）
+browser_click ref=3   →  通过 BackendDOMNodeID 定位 DOM 元素
+browser_navigate      →  页面变化，旧 ref 全部失效
+browser_snapshot      →  必须重新获取
+```
+
+---
 
 ## 故障排除
 
 ### 找不到浏览器
 
 ```
-错误：no chrome executable found
+failed to launch browser: no chrome executable found
 ```
 
-安装 Chrome、Brave 或 Edge，或使用 `executable_path` 参数指定路径。
+**解决：** 安装 Chrome、Brave 或 Edge，或用 `executable_path` 指定路径：
+
+```
+browser_start executable_path="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
+```
+
+---
+
+### CDP 连接失败
+
+```
+failed to resolve CDP address 127.0.0.1:9222
+```
+
+**解决：** Chrome 未以调试端口启动。执行：
+
+```bash
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.lingti-bot/chrome-profile"
+```
+
+验证：`curl http://localhost:9222/json/version`
+
+---
+
+### ref 失效
+
+```
+ref 5 not found in snapshot
+```
+
+**原因：** 页面内容已变化（导航、动态加载等），旧 ref 不再有效。
+
+**解决：** 重新执行 `browser_snapshot` 获取新 ref 编号。
+
+---
 
 ### 快照为空
 
-页面可能还在加载中。`browser_navigate` 会等待页面加载完成，但动态内容可能需要额外等待。尝试再次执行 `browser_snapshot`。
+**原因：** 页面还在加载，或为纯 canvas/WebGL 应用（无障碍树为空）。
 
-### ref 无效
+**解决：**
+1. 等待页面稳定后重试 `browser_snapshot`
+2. 对于无障碍树为空的页面，改用 `browser_execute_js` 提取内容
+
+---
+
+### 无头模式下页面渲染异常
+
+部分网站会检测 headless 并显示验证码或重定向。改用有界面模式：
 
 ```
-错误：ref 5 not found in snapshot
+browser_start headless=false
 ```
 
-页面内容已变化，ref 已失效。重新执行 `browser_snapshot` 获取新编号。
+---
 
-### Linux 无头模式问题
+### Linux 服务器无 GUI
 
-如果在 Linux 服务器（无 GUI）上运行，确保使用 `headless=true`（默认）并安装必要的依赖：
+确保使用 headless 模式并安装浏览器依赖：
 
 ```bash
-# Debian/Ubuntu
+# Ubuntu/Debian
 apt-get install -y chromium-browser
+
+# 启动 bot 时浏览器会自动以 headless 模式运行
 ```
+
+---
+
+## 与其他方案对比
+
+| | lingti-bot | Playwright/Node.js | Selenium |
+|--|--|--|--|
+| **语言** | Go（单二进制） | Node.js | Java/Python |
+| **依赖** | 仅需 Chrome | Node.js + 浏览器驱动 | JVM + 驱动 |
+| **部署** | 复制一个文件 | npm install | 配置复杂 |
+| **AI 集成** | 原生 MCP | 需要额外封装 | 需要额外封装 |
+| **无障碍树** | 原生支持 | 支持 | 有限支持 |
+| **连接已有浏览器** | ✅ cdp_url | ✅ connectOverCDP | ❌ |

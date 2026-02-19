@@ -80,6 +80,7 @@ platforms:
 
 browser:
   screen_size: fullscreen  # "fullscreen" 或 "宽x高"（如 "1024x768"），默认 fullscreen
+  cdp_url: "127.0.0.1:9222"  # 可选：连接已运行的 Chrome（需以 --remote-debugging-port 启动）
 
 security:
   allowed_paths:             # 限制文件操作的目录白名单（空=不限制）

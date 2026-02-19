@@ -184,7 +184,10 @@ func (b *Browser) Stop() error {
 }
 
 // EnsureRunning starts the browser if not already running.
-// Tries to connect to existing Chrome on port 9222 first, then launches a new one.
+// Resolution order:
+//  1. cfg.Browser.CDPURL  — user-configured CDP address (highest priority)
+//  2. 127.0.0.1:9222      — well-known default debug port
+//  3. Launch a new Chrome instance (fallback)
 func (b *Browser) EnsureRunning() error {
 	b.mu.Lock()
 	running := b.running
@@ -194,11 +197,21 @@ func (b *Browser) EnsureRunning() error {
 		return nil
 	}
 
-	// Try connecting to existing Chrome with debugging port
+	cfg, _ := config.Load()
+
+	// 1. User-configured CDP address
+	if cfg.Browser.CDPURL != "" {
+		if _, err := launcher.ResolveURL(cfg.Browser.CDPURL); err == nil {
+			return b.Start(StartOptions{ConnectURL: cfg.Browser.CDPURL})
+		}
+	}
+
+	// 2. Well-known default debug port
 	if _, err := launcher.ResolveURL("127.0.0.1:9222"); err == nil {
 		return b.Start(StartOptions{ConnectURL: "127.0.0.1:9222"})
 	}
 
+	// 3. Launch a new Chrome instance
 	return b.Start(StartOptions{
 		Headless:       false,
 		ExecutablePath: detectChrome(),

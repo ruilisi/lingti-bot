@@ -15,7 +15,7 @@
 **核心优势：**
 - 🚀 **零依赖部署** — 单个 30MB 二进制文件，无需 Node.js/Python 运行时，**一行命令**安装即用
 - ☁️ **[云中继](docs/cloud-relay.md)加持** — 无需公网服务器、域名备案、HTTPS 证书，5 分钟接入企业微信/微信公众号
-- 🤖 **浏览器自动化** — 内置 CDP 协议控制，快照-操作模式，无需 Puppeteer/Playwright 安装
+- 🤖 **[浏览器自动化](docs/browser-automation.md)** — 内置完整 CDP 控制引擎，可接管已有 Chrome 窗口，快照-操作模式精准定位元素，无需 Puppeteer/Playwright/Node.js
 - 🛠️ **75+ MCP 工具** — 覆盖文件、Shell、系统、网络、日历、Git、GitHub 等全场景
 - 🌏 **中国平台原生支持** — 钉钉、飞书、企业微信、微信公众号开箱即用
 - 🔌 **嵌入式友好** — 可编译到 ARM/MIPS，轻松部署到树莓派、路由器、NAS
@@ -88,6 +88,56 @@ lingti-bot relay --platform wecom --provider deepseek --api-key sk-xxx
 </p>
 
 直接在企业微信中用自然语言浏览、查找、传输电脑上的文件。无需远程桌面，无需 U 盘，对 AI 说一句话即可。
+
+### 浏览器自动化 — 让 AI 像人一样操控浏览器
+
+> 无需 Puppeteer、无需 Node.js、无需安装任何依赖——直接用自然语言驾驭 Chrome
+
+lingti-bot 内置完整的 CDP（Chrome DevTools Protocol）自动化引擎，采用**快照-操作（Snapshot-then-Act）**模式：先读取页面无障碍树，理解每个元素的角色和名称，再精准点击、输入、截图。
+
+**直接在你正在使用的 Chrome 里操作：**
+
+```bash
+# 1. 用调试端口启动 Chrome（一次配置，长期使用）
+/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+  --remote-debugging-port=9222 \
+  --user-data-dir="$HOME/.lingti-bot/chrome-profile"
+
+# 2. ~/.lingti.yaml 中添加一行
+# browser:
+#   cdp_url: "127.0.0.1:9222"
+```
+
+之后，对 AI 说话即可——bot 会在你已有的 Chrome 里开新标签页操作，不再另弹窗口：
+
+```
+"打开知乎，搜索 Go 语言并截图"
+"帮我登录 GitHub，查看我最新的 PR"
+"打开这个表单，填写姓名张三、手机 138xxxx1234，然后提交"
+"把电商后台所有待审核商品都批量通过"
+"每隔5分钟截一张这个监控大屏的图"
+```
+
+**工作原理（AI 自动完成全部步骤）：**
+
+```
+browser_navigate url="https://www.zhihu.com"
+browser_snapshot
+→ [1] textbox "搜索" [2] button "搜索" [3] link "登录" ...
+
+browser_type ref=1 text="Go 语言" submit=true
+browser_snapshot
+→ 看到搜索结果列表
+
+browser_screenshot path="/tmp/zhihu-result.png"
+→ 截图保存完成
+```
+
+14 个浏览器工具覆盖完整自动化流程：生命周期管理、导航、无障碍树快照、点击/输入/按键、JavaScript 执行、批量操作、多标签页管理、截图。
+
+> 📖 **完整使用指南、连接配置、故障排除：[浏览器自动化文档](docs/browser-automation.md)**
+
+---
 
 ## 为什么选择 lingti-bot？
 
@@ -226,7 +276,7 @@ make build
 | **音乐控制** | 7 | 播放、暂停、切歌、音量、搜索 (macOS) |
 | **Git** | 4 | 状态、日志、差异、分支 |
 | **GitHub** | 6 | PR 列表/详情、Issue 管理、仓库信息 |
-| **浏览器自动化** | 12 | 快照、点击、输入、截图、标签页管理 |
+| **[浏览器自动化](docs/browser-automation.md)** | 14 | CDP 控制引擎，可接管已有 Chrome，快照定位、点击/输入/JS、多标签页、截图 |
 | **定时任务** | 5 | 创建、列表、删除、暂停、恢复计划任务 |
 
 ### 定时任务 — 自动化你的工作流
@@ -627,7 +677,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 - [企业微信集成指南](docs/wecom-integration.md) - 企业微信应用配置教程
 - [文件发送指南](docs/file-sending.md) - 各平台文件传输能力、配置与限制
 - [定时任务指南](docs/cron-jobs.md) - AI 智能任务 vs 静态消息、Cron 表达式、管理命令
-- [浏览器自动化指南](docs/browser-automation.md) - 快照-操作模式的浏览器控制
+- [浏览器自动化指南](docs/browser-automation.md) - CDP 引擎、接管已有 Chrome、14 个工具完整参考、典型场景与故障排除
 - [OpenClaw 技术特性对比](docs/openclaw-feature-comparison.md) - 详细功能差异分析
 
 ---
@@ -656,7 +706,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 | 音乐控制 (macOS) | 7 | 播放、暂停、切歌、音量 |
 | Git | 4 | 状态、日志、差异、分支 |
 | GitHub | 6 | PR、Issue、仓库信息 |
-| 浏览器自动化 | 12 | 快照、点击、输入、截图、标签页 |
+| [浏览器自动化](docs/browser-automation.md) | 14 | 快照、点击、输入、JS 执行、批量操作、截图、标签页 |
 
 ### 文件操作
 
@@ -804,24 +854,46 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 
 ### 浏览器自动化
 
-基于 [go-rod](https://github.com/go-rod/rod) 的纯 Go 浏览器自动化，采用**快照-操作（Snapshot-then-Act）**模式。详细文档：[浏览器自动化指南](docs/browser-automation.md)
+基于 [go-rod](https://github.com/go-rod/rod) 的纯 Go 浏览器自动化引擎，采用**快照-操作（Snapshot-then-Act）**模式，可接管已有 Chrome 窗口，无需 Puppeteer/Playwright/Node.js。
+
+> 📖 完整指南：[浏览器自动化文档](docs/browser-automation.md)
+
+**连接已有 Chrome（推荐）：**
+
+```yaml
+# ~/.lingti.yaml
+browser:
+  cdp_url: "127.0.0.1:9222"   # Chrome 需以 --remote-debugging-port=9222 启动
+  screen_size: "1920x1080"     # 或 "fullscreen"
+```
+
+**核心工作流：**
+
+```
+browser_snapshot  →  [1] textbox "搜索"  [2] button "搜索"  [3] link "登录"
+browser_type ref=1 text="keyword"
+browser_click ref=2
+browser_snapshot  →  重新获取编号（页面变化后必须重新 snapshot）
+```
+
+**14 个工具完整列表：**
 
 | 工具 | 功能 |
 |------|------|
-| `browser_start` | 启动浏览器（支持无头模式） |
-| `browser_stop` | 关闭浏览器 |
-| `browser_status` | 查看浏览器状态 |
-| `browser_navigate` | 导航到指定 URL |
-| `browser_snapshot` | 获取页面无障碍快照（带编号 ref） |
-| `browser_screenshot` | 截取页面截图 |
-| `browser_click` | 点击元素（按 ref 编号） |
-| `browser_type` | 向元素输入文本（按 ref 编号） |
-| `browser_press` | 按下键盘按键 |
-| `browser_tabs` | 列出所有标签页 |
-| `browser_tab_open` | 打开新标签页 |
-| `browser_tab_close` | 关闭标签页 |
-
-**使用流程：** `browser_snapshot` 获取编号 → `browser_click`/`browser_type` 操作元素 → 页面变化后重新 `browser_snapshot`
+| `browser_start` | 启动新浏览器，或连接已有 Chrome（`cdp_url` 参数） |
+| `browser_stop` | 关闭浏览器；CDP 连接模式下只断开，不关闭 Chrome |
+| `browser_status` | 查看运行状态（是否 connected、页面数、当前 URL） |
+| `browser_navigate` | 导航到 URL，自动等待页面加载，浏览器未启动时自动按优先级连接 |
+| `browser_snapshot` | 获取无障碍树快照，为每个可交互元素分配数字 ref |
+| `browser_screenshot` | 截图，支持视口截图或整页截图，`full_page=true` |
+| `browser_click` | 按 ref 编号点击元素，自动滚动到可见位置 |
+| `browser_type` | 按 ref 编号输入文本，`submit=true` 输入后按 Enter |
+| `browser_press` | 按键（Enter、Tab、Escape、方向键、PageUp/Down 等） |
+| `browser_execute_js` | 在当前页面执行任意 JavaScript，返回结果字符串 |
+| `browser_click_all` | 按 CSS 选择器批量点击，支持间隔延迟和跳过条件 |
+| `browser_tabs` | 列出所有标签页（target_id、url、title） |
+| `browser_tab_open` | 打开新标签页，可指定初始 URL |
+| `browser_tab_close` | 按 target_id 关闭标签页，或关闭当前活跃标签页 |
 
 ### 其他
 
