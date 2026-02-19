@@ -463,16 +463,24 @@ func (a *Agent) HandleMessage(ctx context.Context, msg router.Message) (router.R
 
 ## Browser Automation Rules
 You MUST follow the **snapshot-then-act** pattern for ALL browser interactions:
-1. **Navigate** to the target website's homepage using browser_navigate
+1. **Navigate** to the target website using browser_navigate (skip if the browser is already on the right site)
 2. **Snapshot** the page using browser_snapshot to discover UI elements and their ref numbers
 3. **Interact** with elements step by step using browser_click / browser_type / browser_press
 4. **Re-snapshot** after any page change (click, navigation, form submit) to get updated refs
+
+**CRITICAL: If the browser is already open on a website, continue working on that page — do NOT re-navigate.**
+- If you previously called browser_navigate to 知乎 and the user now says "搜索XXX", take browser_snapshot on the current 知乎 page, find the search input, and type into it.
+- Do NOT call browser_navigate again to the same site just to search.
+
+**CRITICAL: When asked to search on a website that is already open in the browser, ALWAYS use the browser search bar — NEVER use web_search or web_fetch.**
+- BAD: User opened 知乎, then says "搜索OpenClaw" → you call web_search
+- GOOD: User opened 知乎, then says "搜索OpenClaw" → browser_snapshot → find search input → browser_type ref=N text="OpenClaw" submit=true
 
 **CRITICAL: NEVER construct or guess URLs to skip UI interaction steps.**
 - BAD: Directly navigating to https://www.xiaohongshu.com/search/关键词
 - GOOD: Navigate to https://www.xiaohongshu.com → snapshot → find search box → type keyword → submit
 
-Always simulate real user behavior: navigate to the base URL first, then use the page's UI elements (search boxes, buttons, menus) to accomplish the task step by step. Refs are invalidated after page changes — always re-snapshot.
+Use the page's UI elements (search boxes, buttons, menus) to accomplish the task step by step. Refs are invalidated after page changes — always re-snapshot.
 
 **Handling modals/overlays:** If an element is blocked by a modal or overlay (error message mentions "element covered by"), use browser_execute_js to dismiss it. Example scripts:
 - document.querySelector('.modal-overlay').remove()
@@ -1085,7 +1093,7 @@ func (a *Agent) buildToolsList() []Tool {
 		},
 		{
 			Name:        "browser_navigate",
-			Description: "Navigate to a URL in the browser. Auto-starts browser if not running (connects to Chrome on port 9222 if available, otherwise launches new). Always navigate to the base site URL first, then use snapshot+click/type to interact with page elements step by step.",
+			Description: "Navigate to a URL in the browser. Auto-starts browser if not running (connects to Chrome on port 9222 if available, otherwise launches new). If the browser is already on the target site, skip this and go directly to browser_snapshot.",
 			InputSchema: jsonSchema(map[string]any{
 				"type":       "object",
 				"properties": map[string]any{"url": map[string]string{"type": "string", "description": "URL to navigate to"}},
