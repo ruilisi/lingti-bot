@@ -125,7 +125,8 @@ func (b *Browser) Start(opts StartOptions) error {
 		if err != nil {
 			return fmt.Errorf("failed to open initial page: %w", err)
 		}
-		page.MustWaitStable()
+		// Non-fatal: page may redirect and trigger "navigated or closed"
+		_ = page.WaitLoad()
 	}
 
 	return nil
@@ -154,7 +155,8 @@ func (b *Browser) connectLocked(addr string, initialURL string) error {
 		if err != nil {
 			return fmt.Errorf("failed to open initial page: %w", err)
 		}
-		page.MustWaitStable()
+		// Non-fatal: page may redirect and trigger "navigated or closed"
+		_ = page.WaitLoad()
 	}
 
 	return nil
@@ -239,7 +241,10 @@ func (b *Browser) Rod() *rod.Browser {
 	return b.browser
 }
 
-// ActivePage returns the most recently used page or the first available page.
+// ActivePage returns the current page for automation workflows.
+// When connected to the user's existing Chrome (connected mode), it always
+// opens a new tab to avoid hijacking the user's current page.
+// When running a bot-launched Chrome, it reuses the existing first tab.
 func (b *Browser) ActivePage() (*rod.Page, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -248,12 +253,22 @@ func (b *Browser) ActivePage() (*rod.Page, error) {
 		return nil, fmt.Errorf("browser not running")
 	}
 
+	// In connected mode (user's own Chrome), always open a new tab so we
+	// never hijack whatever the user currently has open.
+	if b.connected {
+		page, err := b.browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
+		if err != nil {
+			return nil, fmt.Errorf("failed to open new tab: %w", err)
+		}
+		return page, nil
+	}
+
+	// Bot-launched Chrome: reuse the existing first tab for workflow continuity.
 	pages, err := b.browser.Pages()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pages: %w", err)
 	}
 	if len(pages) == 0 {
-		// Create a blank page if none exist
 		page, err := b.browser.Page(proto.TargetCreateTarget{URL: "about:blank"})
 		if err != nil {
 			return nil, fmt.Errorf("failed to create page: %w", err)

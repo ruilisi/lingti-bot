@@ -502,7 +502,8 @@ func BrowserTabOpen(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolRe
 		return mcp.NewToolResultError(fmt.Sprintf("failed to open tab: %v", err)), nil
 	}
 
-	page.MustWaitLoad()
+	// WaitLoad may return "Inspected target navigated or closed" on redirects — treat as non-fatal.
+	_ = page.WaitLoad()
 
 	info, err := page.Info()
 	if err != nil {
