@@ -470,8 +470,10 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 
 		// On question pages "X条评论" toggles the list; "添加评论" appears inside.
 		// Click the first answer's comment toggle to expand it.
+		// Exclude "收起评论" (collapse) — we must not collapse an already-open section.
 		var toggleBtn = Array.from(document.querySelectorAll('button,span')).find(function(e) {
 			var t = e.textContent.replace(/\u200b/g,'').trim();
+			if (t.indexOf('收起') !== -1) return false;
 			return /^[\d]+\s*条评论$/.test(t) || t === '评论';
 		});
 		if (toggleBtn) { toggleBtn.click(); return 'expanded: ' + toggleBtn.textContent.trim(); }
@@ -535,14 +537,19 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 		}
 	}
 
-	// Step 1c: wait for the Draft.js editor to appear (poll up to 4s)
+	// Step 1c: wait for the Draft.js editor to appear (poll up to 4s).
+	// Skip if step1a already confirmed the editor is open.
 	var editorReady bool
-	for range 20 {
-		time.Sleep(200 * time.Millisecond)
-		check, _ := browser.ExecuteJS(page, `document.querySelector('.public-DraftEditor-content') ? 'yes' : 'no'`)
-		if check == "yes" {
-			editorReady = true
-			break
+	if r1 == "editor already open" {
+		editorReady = true
+	} else {
+		for range 20 {
+			time.Sleep(200 * time.Millisecond)
+			check, _ := browser.ExecuteJS(page, `document.querySelector('.public-DraftEditor-content') ? 'yes' : 'no'`)
+			if check == "yes" {
+				editorReady = true
+				break
+			}
 		}
 	}
 	if !editorReady {
