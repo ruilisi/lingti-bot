@@ -1235,6 +1235,17 @@ func (a *Agent) buildToolsList() []Tool {
 			}),
 		},
 		{
+			Name:        "browser_comment_zhihu",
+			Description: "Post a comment on a Zhihu answer. Must already be on a Zhihu question/answer page. Automatically expands the comment section, types the comment using Draft.js execCommand, and clicks 发布 to submit. Use this instead of browser_click + browser_type for Zhihu commenting.",
+			InputSchema: jsonSchema(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"comment": map[string]string{"type": "string", "description": "The comment text to post"},
+				},
+				"required": []string{"comment"},
+			}),
+		},
+		{
 			Name:        "browser_screenshot",
 			Description: "Take a screenshot of the current page",
 			InputSchema: jsonSchema(map[string]any{
@@ -1685,6 +1696,9 @@ func callToolDirect(ctx context.Context, name string, args map[string]any) strin
 			script = s
 		}
 		return executeBrowserExecuteJS(ctx, script)
+	case "browser_comment_zhihu":
+		comment, _ := args["comment"].(string)
+		return executeBrowserCommentZhihu(ctx, comment)
 	case "browser_click_all":
 		return executeBrowserClickAll(ctx, args)
 	case "browser_screenshot":

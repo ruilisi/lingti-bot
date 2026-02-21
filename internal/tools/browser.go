@@ -435,6 +435,72 @@ func BrowserPress(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResu
 	return mcp.NewToolResultText(fmt.Sprintf("Pressed %s", key)), nil
 }
 
+// BrowserCommentZhihu posts a comment on a Zhihu answer using the verified JS recipe.
+// It expands the first answer's comment section, types the comment, and submits.
+func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	comment, ok := req.Params.Arguments["comment"].(string)
+	if !ok || comment == "" {
+		return mcp.NewToolResultError("comment is required"), nil
+	}
+
+	b := browser.Instance()
+	page, err := b.ActivePage()
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to get page: %v", err)), nil
+	}
+
+	// Step 1: expand comments on the first answer
+	r1, err := browser.ExecuteJS(page, `
+		var btn = document.querySelector('button.ContentItem-action');
+		if (btn) { btn.click(); return 'clicked: ' + btn.textContent.trim(); }
+		return 'comment button not found';
+	`)
+	logger.Debug("[browser_comment_zhihu] step1 expand: %s", r1)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("step1 failed: %v", err)), nil
+	}
+
+	// Wait for comment section to expand
+	time.Sleep(800 * time.Millisecond)
+
+	// Step 2: type into Draft.js editor via execCommand
+	escaped := strings.ReplaceAll(comment, `'`, `\'`)
+	escaped = strings.ReplaceAll(escaped, "\n", `\n`)
+	r2, err := browser.ExecuteJS(page, fmt.Sprintf(`
+		var ed = document.querySelector('.public-DraftEditor-content');
+		if (!ed) { return 'editor not found'; }
+		ed.focus();
+		document.execCommand('selectAll', false);
+		document.execCommand('delete', false);
+		document.execCommand('insertText', false, '%s');
+		return 'typed: ' + ed.textContent.substring(0, 60);
+	`, escaped))
+	logger.Debug("[browser_comment_zhihu] step2 type: %s", r2)
+	if err != nil || r2 == "editor not found" {
+		return mcp.NewToolResultError(fmt.Sprintf("step2 type failed: %v %s", err, r2)), nil
+	}
+
+	// Wait briefly for input handlers
+	time.Sleep(300 * time.Millisecond)
+
+	// Step 3: click the 发布 submit button
+	r3, err := browser.ExecuteJS(page, `
+		var btn = document.querySelector('button.Button--primary');
+		if (btn && !btn.disabled) { btn.click(); return 'submitted'; }
+		if (btn && btn.disabled) { return 'submit button is disabled (comment may be empty)'; }
+		return 'submit button not found';
+	`)
+	logger.Debug("[browser_comment_zhihu] step3 submit: %s", r3)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("step3 submit failed: %v", err)), nil
+	}
+
+	if r3 == "submitted" {
+		return mcp.NewToolResultText(fmt.Sprintf("Comment posted successfully: %q", comment)), nil
+	}
+	return mcp.NewToolResultError(fmt.Sprintf("comment may not have submitted: %s (expand=%s, type=%s)", r3, r1, r2)), nil
+}
+
 // BrowserExecuteJS runs JavaScript on the active page.
 func BrowserExecuteJS(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	script, ok := req.Params.Arguments["script"].(string)

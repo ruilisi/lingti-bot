@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"github.com/pltanton/lingti-bot/internal/agent"
@@ -245,7 +246,7 @@ func runRelay(cmd *cobra.Command, args []string) {
 		fmt.Fprintln(os.Stderr, "Error: --platform must be 'feishu', 'slack', 'wechat', or 'wecom'")
 		os.Exit(1)
 	}
-	if relayAPIKey == "" {
+	if relayAPIKey == "" && strings.ToLower(relayAIProvider) != "ollama" {
 		fmt.Fprintln(os.Stderr, "Error: AI API key is required (--api-key or AI_API_KEY env)")
 		os.Exit(1)
 	}

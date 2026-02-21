@@ -546,6 +546,16 @@ func executeBrowserExecuteJS(ctx context.Context, script string) string {
 	return extractText(result)
 }
 
+func executeBrowserCommentZhihu(ctx context.Context, comment string) string {
+	req := mcp.CallToolRequest{}
+	req.Params.Arguments = map[string]interface{}{"comment": comment}
+	result, err := tools.BrowserCommentZhihu(ctx, req)
+	if err != nil {
+		return "Error: " + err.Error()
+	}
+	return extractText(result)
+}
+
 func executeBrowserClickAll(ctx context.Context, args map[string]any) string {
 	req := mcp.CallToolRequest{}
 	req.Params.Arguments = args
