@@ -50,12 +50,22 @@ func SkillsDir() string {
 	return filepath.Join(home, ".lingti", "skills")
 }
 
+// MCPServerConfig describes one external MCP server to connect to.
+type MCPServerConfig struct {
+	Name    string   `yaml:"name"`
+	Command string   `yaml:"command,omitempty"`
+	Args    []string `yaml:"args,omitempty"`
+	Env     []string `yaml:"env,omitempty"`
+	URL     string   `yaml:"url,omitempty"`
+}
+
 type AIConfig struct {
-	Provider   string `yaml:"provider,omitempty"`
-	APIKey     string `yaml:"api_key,omitempty"`
-	BaseURL    string `yaml:"base_url,omitempty"`
-	Model      string `yaml:"model,omitempty"`
-	MaxRounds  int    `yaml:"max_rounds,omitempty"`
+	Provider   string            `yaml:"provider,omitempty"`
+	APIKey     string            `yaml:"api_key,omitempty"`
+	BaseURL    string            `yaml:"base_url,omitempty"`
+	Model      string            `yaml:"model,omitempty"`
+	MaxRounds  int               `yaml:"max_rounds,omitempty"`
+	MCPServers []MCPServerConfig `yaml:"mcp_servers,omitempty"`
 }
 
 type PlatformConfig struct {

@@ -12,6 +12,7 @@ import (
 	"syscall"
 
 	"github.com/pltanton/lingti-bot/internal/agent"
+	"github.com/pltanton/lingti-bot/internal/agent/mcpclient"
 	"github.com/pltanton/lingti-bot/internal/config"
 	cronpkg "github.com/pltanton/lingti-bot/internal/cron"
 	"github.com/pltanton/lingti-bot/internal/platforms/relay"
@@ -312,6 +313,20 @@ func runRelay(cmd *cobra.Command, args []string) {
 		log.Printf("Loaded custom instructions from %s (%d bytes)", relayInstructions, len(data))
 	}
 
+	// Load MCP server configs from yaml config file
+	var mcpServers []mcpclient.ServerConfig
+	if savedCfg, err := config.Load(); err == nil {
+		for _, s := range savedCfg.AI.MCPServers {
+			mcpServers = append(mcpServers, mcpclient.ServerConfig{
+				Name:    s.Name,
+				Command: s.Command,
+				Args:    s.Args,
+				Env:     s.Env,
+				URL:     s.URL,
+			})
+		}
+	}
+
 	// Create the AI agent
 	aiAgent, err := agent.New(agent.Config{
 		Provider:           relayAIProvider,
@@ -322,6 +337,7 @@ func runRelay(cmd *cobra.Command, args []string) {
 		AllowedPaths:       loadAllowedPaths(),
 		DisableFileTools:   loadDisableFileTools(),
 		MaxToolRounds:      relayMaxRounds,
+		MCPServers:         mcpServers,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating agent: %v\n", err)

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pltanton/lingti-bot/internal/agent/mcpclient"
 	"github.com/pltanton/lingti-bot/internal/config"
 	cronpkg "github.com/pltanton/lingti-bot/internal/cron"
 	"github.com/pltanton/lingti-bot/internal/logger"
@@ -30,6 +31,7 @@ type Agent struct {
 	pathChecker        *security.PathChecker
 	disableFileTools   bool
 	maxToolRounds      int
+	mcpManager         *mcpclient.Manager
 }
 
 // Config holds agent configuration
@@ -43,6 +45,7 @@ type Config struct {
 	AllowedPaths       []string // Restrict file/shell operations to these directories (empty = no restriction)
 	DisableFileTools   bool     // Completely disable all file operation tools
 	MaxToolRounds      int      // Max tool-call iterations per message (0 = use default 100)
+	MCPServers         []mcpclient.ServerConfig // External MCP servers to connect to
 }
 
 // New creates a new Agent with the specified provider
@@ -69,6 +72,7 @@ func New(cfg Config) (*Agent, error) {
 		pathChecker:        security.NewPathChecker(cfg.AllowedPaths),
 		disableFileTools:   cfg.DisableFileTools,
 		maxToolRounds:      maxRounds,
+		mcpManager:         mcpclient.New(cfg.MCPServers),
 	}, nil
 }
 
@@ -304,7 +308,7 @@ func (a *Agent) SetCronScheduler(s *cronpkg.Scheduler) {
 
 // ExecuteTool implements the cron.ToolExecutor interface
 func (a *Agent) ExecuteTool(ctx context.Context, toolName string, arguments map[string]any) (any, error) {
-	result := callToolDirect(ctx, toolName, arguments)
+	result := a.callToolDirect(ctx, toolName, arguments)
 	return result, nil
 }
 
@@ -700,7 +704,7 @@ func formatSkillsSection() string {
 
 // buildToolsList creates the tools list for the AI provider
 func (a *Agent) buildToolsList() []Tool {
-	return []Tool{
+	tools := []Tool{
 		// === FILE OPERATIONS ===
 		{
 			Name:        "file_send",
@@ -1344,6 +1348,18 @@ func (a *Agent) buildToolsList() []Tool {
 			}),
 		},
 	}
+
+	// Append tools from external MCP servers
+	for _, t := range a.mcpManager.AllTools() {
+		schema := json.RawMessage(t.InputSchema)
+		tools = append(tools, Tool{
+			Name:        t.FullName,
+			Description: t.Description,
+			InputSchema: schema,
+		})
+	}
+
+	return tools
 }
 
 // processToolCalls executes tool calls and returns results plus any file attachments
@@ -1415,7 +1431,7 @@ func (a *Agent) executeTool(ctx context.Context, name string, input json.RawMess
 	}
 
 	// Call tools directly
-	result := callToolDirect(ctx, name, args)
+	result := a.callToolDirect(ctx, name, args)
 
 	// Log result at verbose level (truncate if too long)
 	if len(result) > 500 {
@@ -1456,7 +1472,15 @@ func (a *Agent) checkToolPathAccess(name string, args map[string]any) error {
 }
 
 // callToolDirect calls a tool directly
-func callToolDirect(ctx context.Context, name string, args map[string]any) string {
+func (a *Agent) callToolDirect(ctx context.Context, name string, args map[string]any) string {
+	// Dispatch to external MCP servers first
+	if mcpclient.IsMCPTool(name) {
+		result, err := a.mcpManager.Call(ctx, name, args)
+		if err != nil {
+			return "Error: " + err.Error()
+		}
+		return result
+	}
 	switch name {
 	// File operations
 	case "file_list":

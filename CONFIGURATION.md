@@ -51,6 +51,15 @@ ai:
   model: ""          # 自定义模型名（可选，留空使用 provider 默认值）
   max_rounds: 100    # 每条消息最多工具调用轮次（默认 100）
 
+  # 外部 MCP 服务器（可选）：bot 启动时自动连接并将其工具暴露给 AI
+  # 工具名称格式：mcp_<name>_<tool_name>
+  mcp_servers:
+    - name: chrome          # 工具名前缀，如 mcp_chrome_take_snapshot
+      command: npx
+      args: ["chrome-devtools-mcp", "--browserUrl=http://127.0.0.1:9222"]
+    # - name: my_server      # SSE 方式连接
+    #   url: http://localhost:3000/sse
+
 relay:
   platform: wecom    # "feishu", "slack", "wechat", "wecom"
   user_id: ""        # 从 /whoami 获取（WeCom 不需要）
