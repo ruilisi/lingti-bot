@@ -29,6 +29,7 @@ type Agent struct {
 	cronCreatedCount   int            // tracks cron_create calls per HandleMessage turn
 	pathChecker        *security.PathChecker
 	disableFileTools   bool
+	maxToolRounds      int
 }
 
 // Config holds agent configuration
@@ -41,6 +42,7 @@ type Config struct {
 	CustomInstructions string   // Additional instructions appended to system prompt (optional)
 	AllowedPaths       []string // Restrict file/shell operations to these directories (empty = no restriction)
 	DisableFileTools   bool     // Completely disable all file operation tools
+	MaxToolRounds      int      // Max tool-call iterations per message (0 = use default 100)
 }
 
 // New creates a new Agent with the specified provider
@@ -54,6 +56,10 @@ func New(cfg Config) (*Agent, error) {
 		return nil, err
 	}
 
+	maxRounds := cfg.MaxToolRounds
+	if maxRounds <= 0 {
+		maxRounds = 100
+	}
 	return &Agent{
 		provider:           provider,
 		memory:             NewMemory(50, 60*time.Minute), // Keep 50 messages, 60 min TTL
@@ -62,6 +68,7 @@ func New(cfg Config) (*Agent, error) {
 		customInstructions: cfg.CustomInstructions,
 		pathChecker:        security.NewPathChecker(cfg.AllowedPaths),
 		disableFileTools:   cfg.DisableFileTools,
+		maxToolRounds:      maxRounds,
 	}, nil
 }
 
@@ -548,7 +555,7 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 	}
 
 	// Handle tool use if needed
-	const maxToolRounds = 20
+	maxToolRounds := a.maxToolRounds
 	var pendingFiles []router.FileAttachment
 	toolCallCounts := map[string]int{} // track per-tool call counts
 	for round := range maxToolRounds {

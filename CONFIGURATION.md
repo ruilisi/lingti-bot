@@ -49,6 +49,7 @@ ai:
   api_key: sk-xxx
   base_url: ""       # 自定义 API 地址（可选）
   model: ""          # 自定义模型名（可选，留空使用 provider 默认值）
+  max_rounds: 100    # 每条消息最多工具调用轮次（默认 100）
 
 relay:
   platform: wecom    # "feishu", "slack", "wechat", "wecom"
@@ -134,6 +135,7 @@ security:
 | `AI_API_KEY` | `--api-key` | API 密钥 |
 | `AI_BASE_URL` | `--base-url` | 自定义 API 地址 |
 | `AI_MODEL` | `--model` | 模型名称 |
+| `AI_MAX_ROUNDS` | `--max-rounds` | 每条消息最多工具调用轮次（默认 100） |
 | - | `--instructions` | 自定义指令文件路径（追加到系统提示词） |
 | `ANTHROPIC_API_KEY` | `--api-key` | API 密钥（fallback） |
 | `ANTHROPIC_BASE_URL` | `--base-url` | API 地址（fallback） |

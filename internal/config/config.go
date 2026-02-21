@@ -51,10 +51,11 @@ func SkillsDir() string {
 }
 
 type AIConfig struct {
-	Provider string `yaml:"provider,omitempty"`
-	APIKey   string `yaml:"api_key,omitempty"`
-	BaseURL  string `yaml:"base_url,omitempty"`
-	Model    string `yaml:"model,omitempty"`
+	Provider   string `yaml:"provider,omitempty"`
+	APIKey     string `yaml:"api_key,omitempty"`
+	BaseURL    string `yaml:"base_url,omitempty"`
+	Model      string `yaml:"model,omitempty"`
+	MaxRounds  int    `yaml:"max_rounds,omitempty"`
 }
 
 type PlatformConfig struct {

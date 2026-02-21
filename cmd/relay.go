@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -28,6 +29,7 @@ var (
 	relayBaseURL       string
 	relayModel         string
 	relayInstructions  string
+	relayMaxRounds     int
 	// WeCom credentials for cloud relay
 	relayWeComCorpID  string
 	relayWeComAgentID string
@@ -109,6 +111,7 @@ func init() {
 	relayCmd.Flags().StringVar(&relayBaseURL, "base-url", "", "Custom API base URL (or AI_BASE_URL env)")
 	relayCmd.Flags().StringVar(&relayModel, "model", "", "Model name (or AI_MODEL env)")
 	relayCmd.Flags().StringVar(&relayInstructions, "instructions", "", "Path to custom instructions file appended to system prompt")
+	relayCmd.Flags().IntVar(&relayMaxRounds, "max-rounds", 0, "Max tool-call iterations per message (default 100, or AI_MAX_ROUNDS env)")
 
 	// WeCom credentials for cloud relay
 	relayCmd.Flags().StringVar(&relayWeComCorpID, "wecom-corp-id", "", "WeCom Corp ID (or WECOM_CORP_ID env)")
@@ -161,6 +164,13 @@ func runRelay(cmd *cobra.Command, args []string) {
 			relayModel = os.Getenv("ANTHROPIC_MODEL")
 		}
 	}
+	if relayMaxRounds == 0 {
+		if v := os.Getenv("AI_MAX_ROUNDS"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				relayMaxRounds = n
+			}
+		}
+	}
 
 	// Get WeCom credentials from flags or environment
 	if relayWeComCorpID == "" {
@@ -200,6 +210,9 @@ func runRelay(cmd *cobra.Command, args []string) {
 		}
 		if relayModel == "" {
 			relayModel = savedCfg.AI.Model
+		}
+		if relayMaxRounds == 0 && savedCfg.AI.MaxRounds > 0 {
+			relayMaxRounds = savedCfg.AI.MaxRounds
 		}
 		// Read relay-specific config (platform, user-id) from saved config
 		if relayPlatform == "" && savedCfg.Relay.Platform != "" {
@@ -308,6 +321,7 @@ func runRelay(cmd *cobra.Command, args []string) {
 		CustomInstructions: customInstructions,
 		AllowedPaths:       loadAllowedPaths(),
 		DisableFileTools:   loadDisableFileTools(),
+		MaxToolRounds:      relayMaxRounds,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating agent: %v\n", err)
