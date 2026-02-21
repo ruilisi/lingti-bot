@@ -507,11 +507,11 @@ DO NOT loop on browser_click for comment buttons. Use this exact 3-step JS seque
 Step 1 — Expand first answer comments:
   browser_execute_js script: "var btn=document.querySelector('button.ContentItem-action'); if(btn){btn.click();return 'clicked:'+btn.textContent.trim();}return 'not found';"
 
-Step 2 — Type into the Draft.js editor via execCommand (wait ~1s after step 1):
-  browser_execute_js script: "var ed=document.querySelector('.public-DraftEditor-content');if(!ed){return 'editor not found';}ed.focus();document.execCommand('selectAll',false);document.execCommand('delete',false);document.execCommand('insertText',false,'COMMENT_TEXT');return 'typed:'+ed.textContent.substring(0,50);"
+Step 2 — Paste into Draft.js editor via ClipboardEvent (execCommand does NOT update Draft.js state, use paste instead):
+  browser_execute_js script: "var ed=document.querySelector('.public-DraftEditor-content');if(!ed){return 'editor not found';}ed.click();ed.focus();document.execCommand('selectAll',false);var dt=new DataTransfer();dt.setData('text/plain','COMMENT_TEXT');ed.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));return 'pasted';"
 
-Step 3 — Click submit:
-  browser_execute_js script: "var btn=document.querySelector('button.Button--primary');if(btn){btn.click();return 'submitted';}return 'submit btn not found';"
+Step 3 — Click submit (IMPORTANT: querySelector returns the search button first, must find by text):
+  browser_execute_js script: "var btn=Array.from(document.querySelectorAll('button.Button--primary')).find(function(b){return b.textContent.trim()==='发布';});if(btn&&!btn.disabled){btn.click();return 'submitted';}if(btn&&btn.disabled){return 'button disabled';}return 'submit btn not found';"
 
 Replace COMMENT_TEXT with the actual comment. DO NOT use browser_click on comment buttons.
 DO NOT click "写回答" — that writes a full answer, not a comment.

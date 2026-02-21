@@ -463,29 +463,35 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 	// Wait for comment section to expand
 	time.Sleep(800 * time.Millisecond)
 
-	// Step 2: type into Draft.js editor via execCommand
-	escaped := strings.ReplaceAll(comment, `'`, `\'`)
-	escaped = strings.ReplaceAll(escaped, "\n", `\n`)
+	// Step 2: insert text into Draft.js editor via ClipboardEvent paste.
+	// execCommand('insertText') inserts DOM text but does NOT update Draft.js's internal
+	// EditorState, so the 发布 button stays disabled. Dispatching a paste ClipboardEvent
+	// causes Draft.js to process the text through its own paste handler, updating state.
+	jsonComment, _ := json.Marshal(comment)
 	r2, err := browser.ExecuteJS(page, fmt.Sprintf(`
 		var ed = document.querySelector('.public-DraftEditor-content');
 		if (!ed) { return 'editor not found'; }
+		ed.click();
 		ed.focus();
 		document.execCommand('selectAll', false);
-		document.execCommand('delete', false);
-		document.execCommand('insertText', false, '%s');
-		return 'typed: ' + ed.textContent.substring(0, 60);
-	`, escaped))
-	logger.Debug("[browser_comment_zhihu] step2 type: %s", r2)
+		var dt = new DataTransfer();
+		dt.setData('text/plain', %s);
+		ed.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+		return 'pasted';
+	`, string(jsonComment)))
+	logger.Debug("[browser_comment_zhihu] step2 paste: %s", r2)
 	if err != nil || r2 == "editor not found" {
-		return mcp.NewToolResultError(fmt.Sprintf("step2 type failed: %v %s", err, r2)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("step2 paste failed: %v %s", err, r2)), nil
 	}
 
-	// Wait briefly for input handlers
-	time.Sleep(300 * time.Millisecond)
+	// Wait for Draft.js to process the paste event and re-render
+	time.Sleep(600 * time.Millisecond)
 
-	// Step 3: click the 发布 submit button
+	// Step 3: click the 发布 submit button.
+	// IMPORTANT: document.querySelector('button.Button--primary') matches the search bar button first.
+	// Must find specifically the button with text "发布".
 	r3, err := browser.ExecuteJS(page, `
-		var btn = document.querySelector('button.Button--primary');
+		var btn = Array.from(document.querySelectorAll('button.Button--primary')).find(function(b){ return b.textContent.trim() === '发布'; });
 		if (btn && !btn.disabled) { btn.click(); return 'submitted'; }
 		if (btn && btn.disabled) { return 'submit button is disabled (comment may be empty)'; }
 		return 'submit button not found';
