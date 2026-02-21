@@ -36,20 +36,26 @@ func BrowserStart(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResu
 
 	b := browser.Instance()
 	logger.Debug("[browser_start] headless=%v url=%q cdp_url=%q executable=%q", opts.Headless, opts.URL, opts.ConnectURL, opts.ExecutablePath)
-	if err := b.Start(opts); err != nil {
-		logger.Debug("[browser_start] failed: %v", err)
-		return mcp.NewToolResultError(fmt.Sprintf("failed to start browser: %v", err)), nil
+
+	var startErr error
+	if opts.ConnectURL == "" && opts.ExecutablePath == "" {
+		// No explicit target: use EnsureRunning so we connect to the configured/running Chrome
+		// (cdp_url from config, or 127.0.0.1:9222) instead of launching a fresh browser
+		// that would have no login state.
+		startErr = b.EnsureRunning()
+	} else {
+		startErr = b.Start(opts)
+	}
+	if startErr != nil {
+		logger.Debug("[browser_start] failed: %v", startErr)
+		return mcp.NewToolResultError(fmt.Sprintf("failed to start browser: %v", startErr)), nil
 	}
 
 	var msg string
 	if opts.ConnectURL != "" {
 		msg = fmt.Sprintf("Connected to existing Chrome at %s", opts.ConnectURL)
 	} else {
-		mode := "headless"
-		if !opts.Headless {
-			mode = "headed"
-		}
-		msg = fmt.Sprintf("Browser started (%s)", mode)
+		msg = "Connected to browser (auto-detected existing Chrome or started new)"
 	}
 	if opts.URL != "" {
 		msg += fmt.Sprintf(", navigated to %s", opts.URL)
