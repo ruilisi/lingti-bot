@@ -500,20 +500,19 @@ Use the page's UI elements (search boxes, buttons, menus) to accomplish the task
 - Seeing a page snapshot in a tool result means: "here is the current state — what should I do next?"
 - If you see a login modal or any obstacle, handle it (dismiss, log in, or report to user) — do not silently stop.
 
-**Zhihu (知乎) commenting — EXACT STEPS (verified working, use browser_execute_js for all):**
-Zhihu uses a Draft.js contenteditable editor. It does NOT appear as textbox in snapshot.
-DO NOT loop on browser_click for comment buttons. Use this exact 3-step JS sequence:
+**Zhihu (知乎) commenting — USE browser_comment_zhihu TOOL DIRECTLY:**
+CRITICAL: When on a Zhihu article/answer page (zhuanlan.zhihu.com or zhihu.com/question), use the browser_comment_zhihu tool to post a comment. DO NOT:
+- Manually click "添加评论" or "展开评论" buttons
+- Use browser_click or browser_execute_js to interact with the comment modal
+- Remove or interact with overlay divs
+- Try to find textareas or editors manually
+Just call: browser_comment_zhihu(comment="your comment text")
+The tool handles everything: opening the comment box, typing, and submitting.
 
-Step 1 — Expand first answer comments:
-  browser_execute_js script: "var btn=document.querySelector('button.ContentItem-action'); if(btn){btn.click();return 'clicked:'+btn.textContent.trim();}return 'not found';"
-
-Step 2 — Paste into Draft.js editor via ClipboardEvent (execCommand does NOT update Draft.js state, use paste instead):
-  browser_execute_js script: "var ed=document.querySelector('.public-DraftEditor-content');if(!ed){return 'editor not found';}ed.click();ed.focus();document.execCommand('selectAll',false);var dt=new DataTransfer();dt.setData('text/plain','COMMENT_TEXT');ed.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));return 'pasted';"
-
-Step 3 — Click submit (IMPORTANT: querySelector returns the search button first, must find by text):
-  browser_execute_js script: "var btn=Array.from(document.querySelectorAll('button.Button--primary')).find(function(b){return b.textContent.trim()==='发布';});if(btn&&!btn.disabled){btn.click();return 'submitted';}if(btn&&btn.disabled){return 'button disabled';}return 'submit btn not found';"
-
-Replace COMMENT_TEXT with the actual comment. DO NOT use browser_click on comment buttons.
+If browser_comment_zhihu fails, THEN use this fallback JS sequence:
+Step 1: browser_execute_js "var btn=document.querySelector('button.ContentItem-action');if(btn){btn.click();return 'clicked';}return 'not found';"
+Step 2: browser_execute_js "var ed=document.querySelector('.public-DraftEditor-content');if(!ed){return 'editor not found';}ed.click();ed.focus();document.execCommand('selectAll',false);var dt=new DataTransfer();dt.setData('text/plain','COMMENT_TEXT');ed.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));return 'pasted';"
+Step 3: browser_execute_js "var btn=Array.from(document.querySelectorAll('button.Button--primary')).find(function(b){return b.textContent.trim()==='发布';});if(btn&&!btn.disabled){btn.click();return 'submitted';}if(btn&&btn.disabled){return 'button disabled';}return 'submit btn not found';"
 DO NOT click "写回答" — that writes a full answer, not a comment.
 
 **Handling modals/overlays:** If an element is blocked by a modal or overlay (error message mentions "element covered by"), use browser_execute_js to dismiss it. Example scripts:
@@ -577,11 +576,9 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 			}
 			if count >= 3 && strings.HasPrefix(tc.Name, "browser_") {
 				stallHint = fmt.Sprintf(
-					"\n\n[SYSTEM HINT] You have called %s %d times. If you are trying to post a comment on Zhihu, "+
-						"STOP clicking and use browser_execute_js instead. Run this script to type and submit the comment:\n"+
-						"script: \"var btn = Array.from(document.querySelectorAll('button,span')).find(e=>e.textContent.includes('评论')); if(btn){btn.click();} return 'clicked comment btn';\" "+
-						"Then after 1s: script: \"var ta = document.querySelector('.CommentInput textarea, textarea'); if(ta){ta.focus();ta.value='YOUR_COMMENT';ta.dispatchEvent(new Event('input',{bubbles:true}));return 'typed';} return 'no textarea found';\" "+
-						"Then find and click the 发布 submit button.",
+					"\n\n[SYSTEM HINT] You have called %s %d times in a row. STOP and use browser_comment_zhihu tool instead. "+
+						"Call browser_comment_zhihu with the comment text — it handles opening the editor, typing, and submitting automatically. "+
+						"Do NOT keep clicking buttons or interacting with the modal manually.",
 					tc.Name, count,
 				)
 			}
