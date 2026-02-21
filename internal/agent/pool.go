@@ -41,7 +41,11 @@ func (p *AgentPool) HandleMessage(ctx context.Context, msg router.Message) (rout
 		return p.defaultAgent.HandleMessage(ctx, msg)
 	}
 
-	resolved := p.fullCfg.ResolveAI(msg.Platform, msg.ChannelID)
+	platform := msg.Platform
+	if ap, ok := msg.Metadata["actual_platform"]; ok && ap != "" {
+		platform = ap
+	}
+	resolved := p.fullCfg.ResolveAI(platform, msg.ChannelID)
 	// If resolved config matches default, use default agent
 	if resolved.Provider == p.fullCfg.AI.Provider &&
 		resolved.APIKey == p.fullCfg.AI.APIKey &&

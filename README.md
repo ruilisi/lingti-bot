@@ -20,7 +20,7 @@
 - 🛠️ **75+ MCP 工具** — 覆盖文件、Shell、系统、网络、日历、Git、GitHub 等全场景
 - 🌏 **中国平台原生支持** — 钉钉、飞书、企业微信、微信公众号开箱即用
 - 🔌 **嵌入式友好** — 可编译到 ARM/MIPS，轻松部署到树莓派、路由器、NAS
-- 🧠 **多 AI 后端** — 集成 Claude、DeepSeek、Kimi、MiniMax、Gemini 等 [16 种 AI 服务](docs/ai-providers.md)，按需切换，支持[按平台/频道指定不同模型](#per-channel-model)
+- 🧠 **多 AI 后端** — 集成 Claude、DeepSeek、Kimi、MiniMax、Gemini 等 [16 种 AI 服务](AI-PROVIDERS.md)，按需切换，支持[按平台/频道指定不同模型](#per-channel-model)
 - 🔬 **Claude 深度思考** — 原生支持 Claude Extended Thinking API，`/think high` 即可启用真正的链式推理
 - 🐳 **Docker 部署** — 提供 Dockerfile 和 docker-compose.yml，一键容器化部署
 - 🩺 **健康诊断** — `lingti-bot doctor` 一键检查配置、连接、依赖，快速定位问题
@@ -355,7 +355,7 @@ make build
 |------|------|
 | **上下文记忆** | 每个用户独立的对话上下文，最近 50 条消息 |
 | **自动过期** | 对话 60 分钟无活动后自动清除 |
-| **多 AI 后端** | [16 种 AI 服务](docs/ai-providers.md)按需切换 |
+| **多 AI 后端** | [16 种 AI 服务](AI-PROVIDERS.md)按需切换 |
 | **对话管理** | `/new`、`/reset`、`新对话` 命令重置对话 |
 
 ### 健康诊断 — 一键排查配置问题
@@ -486,7 +486,7 @@ lingti-bot skills info github
 | **多平台消息网关** | [19 种聊天平台](docs/chat-platforms.md) | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
 | **MCP 工具集** | 75+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
 | **Skills** | 模块化能力扩展 | 8 个内置 Skill，支持自定义和项目级扩展 |
-| **智能对话** | 多轮对话与记忆 | 上下文记忆、[16 种 AI 后端](docs/ai-providers.md)、按平台模型切换 |
+| **智能对话** | 多轮对话与记忆 | 上下文记忆、[16 种 AI 后端](AI-PROVIDERS.md)、按平台模型切换 |
 | **深度思考** | Claude Extended Thinking | 原生 Thinking API，4 级思考深度 |
 | **语音交互** | 语音输入/输出 | 本地 whisper-cpp、OpenAI、ElevenLabs 多引擎支持 |
 | **健康诊断** | `doctor` 命令 | 一键检查配置、连接、依赖 |
@@ -783,7 +783,7 @@ export FEISHU_APP_SECRET="..."
 | 15 | `grok` | Grok (xAI) | `grok-2-latest` |
 | 16 | `ollama` | Ollama (本地) | `llama3.2` |
 
-> 完整列表（含 API Key 获取链接、别名）：[AI 服务列表](docs/ai-providers.md)
+> 完整列表（含 API Key 获取链接、别名）：[AI 服务列表](AI-PROVIDERS.md)
 
 ```bash
 # 使用命令行参数指定
@@ -796,7 +796,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 ### 详细文档
 
 - [配置优先级](CONFIGURATION.md) - 命令行参数 > 环境变量 > 配置文件的解析机制
-- [AI 服务列表](docs/ai-providers.md) - 16 种 AI 服务详情、API Key 获取、别名
+- [AI 服务列表](AI-PROVIDERS.md) - 16 种 AI 服务详情、API Key 获取、别名
 - [聊天平台列表](docs/chat-platforms.md) - 19 种聊天平台详情、配置参数、环境变量
 - [命令行参考](docs/cli-reference.md) - 完整的命令行使用文档
 - [Skills 指南](docs/skills.md) - Skills 系统详解：创建、发现、配置

@@ -19,7 +19,7 @@ English | [中文](./README.md)
 - 🛠️ **75+ MCP Tools** — Covers files, Shell, system, network, calendar, Git, GitHub, and more
 - 🌏 **China Platform Native** — DingTalk, Feishu, WeCom, WeChat Official Account ready out-of-box
 - 🔌 **Embedded Friendly** — Compile to ARM/MIPS, easy deployment to Raspberry Pi, routers, NAS
-- 🧠 **Multi-AI Backend** — [16 AI providers](docs/ai-providers.md) including Claude, DeepSeek, Kimi, MiniMax, Gemini, OpenAI, with per-platform/channel model overrides
+- 🧠 **Multi-AI Backend** — [16 AI providers](AI-PROVIDERS.md) including Claude, DeepSeek, Kimi, MiniMax, Gemini, OpenAI, with per-platform/channel model overrides
 - 🔬 **Claude Extended Thinking** — Native Anthropic Thinking API support, real chain-of-thought reasoning via `/think high`
 - 🐳 **Docker Support** — Multi-stage Dockerfile and docker-compose.yml for containerized deployment
 - 🩺 **Health Diagnostics** — `lingti-bot doctor` checks config, connectivity, dependencies in one command
@@ -294,7 +294,7 @@ Supports **15 AI providers** covering mainstream LLM platforms globally:
 | 14 | `siliconflow` | SiliconFlow / 硅基流动 (aggregator) | `Qwen/Qwen2.5-72B-Instruct` |
 | 15 | `grok` | Grok (xAI) | `grok-2-latest` |
 
-> Full list with API key links and aliases: [AI Providers](docs/ai-providers.md)
+> Full list with API key links and aliases: [AI Providers](AI-PROVIDERS.md)
 
 ```bash
 # Specify provider via command line
@@ -306,7 +306,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 
 ## Documentation
 
-- [AI Providers](docs/ai-providers.md) - 15 supported AI providers with API key links and aliases
+- [AI Providers](AI-PROVIDERS.md) - 15 supported AI providers with API key links and aliases
 - [Chat Platforms](docs/chat-platforms.md) - 19 supported chat platforms with config details and env vars
 - [CLI Reference](docs/cli-reference.md) - Complete CLI documentation
 - [Skills Guide](docs/skills.md) - Modular capability packs: create, discover, manage skills

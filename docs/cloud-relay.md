@@ -386,5 +386,5 @@ sudo systemctl enable --now lingti-bot
 
 - [企业微信集成指南](wecom-integration.md) — 完整的企业微信接入教程
 - [配置说明](../CONFIGURATION.md) — 配置文件和环境变量参考
-- [AI 服务商](ai-providers.md) — 支持的 AI 后端列表
+- [AI 服务商](../AI-PROVIDERS.md) — 支持的 AI 后端列表
 - [聊天平台](chat-platforms.md) — 支持的 19 种聊天平台

@@ -380,7 +380,7 @@ func (p *Platform) sendWebhook(ctx context.Context, channelID string, resp route
 	outgoing := OutgoingResponse{
 		Type:      "response",
 		MessageID: resp.Metadata["message_id"],
-		Platform:  p.config.Platform,
+		Platform:  "relay",
 		ChannelID: channelID,
 		Text:      resp.Text,
 	}
@@ -445,7 +445,7 @@ func (p *Platform) sendFileViaWebhook(ctx context.Context, channelID, filePath, 
 
 	outgoing := OutgoingResponse{
 		Type:      "response",
-		Platform:  p.config.Platform,
+		Platform:  "relay",
 		ChannelID: channelID,
 		Files: []OutgoingFile{
 			{
@@ -690,6 +690,7 @@ func (p *Platform) handleMessage(data []byte) {
 			metadata = make(map[string]string)
 		}
 		metadata["message_id"] = msg.ID
+		metadata["actual_platform"] = p.config.Platform
 
 		p.messageHandler(router.Message{
 			ID:        msg.ID,
@@ -767,10 +768,11 @@ func (p *Platform) handleRawWeComMessage(data []byte) {
 		Username:  userID,
 		Text:      strings.TrimSpace(receivedMsg.Content),
 		Metadata: map[string]string{
-			"message_id": receivedMsg.MsgId,
-			"agent_id":   receivedMsg.AgentID,
-			"corp_id":    p.config.WeComCorpID,
-			"msg_type":   receivedMsg.MsgType,
+			"message_id":      receivedMsg.MsgId,
+			"agent_id":        receivedMsg.AgentID,
+			"corp_id":         p.config.WeComCorpID,
+			"msg_type":        receivedMsg.MsgType,
+			"actual_platform": p.config.Platform,
 		},
 	}
 
@@ -905,7 +907,8 @@ func (p *Platform) handleKfEvent(token string) {
 				"msg_type":        msg.MsgType,
 				"kf":              "true",
 				"open_kfid":       msg.OpenKfID,
-				"external_userid": msg.ExternalUserID,
+				"external_userid":  msg.ExternalUserID,
+				"actual_platform": p.config.Platform,
 			},
 		}
 
