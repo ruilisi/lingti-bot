@@ -449,36 +449,61 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 		return mcp.NewToolResultError(fmt.Sprintf("failed to get page: %v", err)), nil
 	}
 
-	// Step 1: click any comment-related button (添加评论, X条评论, 评论 etc.)
-	// Try multiple selectors to find a comment trigger button.
+	// Step 1a: if editor is already open, skip opening it.
+	// Otherwise click "添加评论" directly if visible, else click "X条评论" to expand
+	// the comment section first, then click "添加评论" inside it.
 	r1, err := browser.ExecuteJS(page, `
-		// Try specific comment action buttons first
-		var selectors = [
-			'button.ContentItem-action',
-			'button[aria-label*="评论"]',
-			'span.ContentItem-action',
-		];
-		for (var i = 0; i < selectors.length; i++) {
-			var btns = Array.from(document.querySelectorAll(selectors[i]));
-			var btn = btns.find(function(b) {
-				var t = b.textContent.trim();
-				return t.includes('评论') || t.includes('comment');
-			});
-			if (btn) { btn.click(); return 'clicked: ' + btn.textContent.trim(); }
-		}
-		// Fallback: any element with 评论 text that looks clickable
-		var all = Array.from(document.querySelectorAll('button,span,a')).filter(function(e) {
-			return e.textContent.trim().match(/^[\d\s]*评论$/) || e.textContent.trim() === '添加评论';
+		// Already open?
+		if (document.querySelector('.public-DraftEditor-content')) { return 'editor already open'; }
+
+		// Prefer clicking "添加评论" directly (zhuanlan pages show this right away)
+		var addBtn = Array.from(document.querySelectorAll('button,span,a')).find(function(e) {
+			return e.textContent.replace(/\u200b/g,'').trim() === '添加评论';
 		});
-		if (all.length > 0) { all[0].click(); return 'fallback clicked: ' + all[0].textContent.trim(); }
-		return 'comment button not found';
+		if (addBtn) { addBtn.click(); return 'clicked 添加评论'; }
+
+		// On question pages "X条评论" toggles the list; "添加评论" appears inside.
+		// Click the first answer's comment toggle to expand it.
+		var toggleBtn = Array.from(document.querySelectorAll('button,span')).find(function(e) {
+			var t = e.textContent.replace(/\u200b/g,'').trim();
+			return /^[\d]+\s*条评论$/.test(t) || t === '评论';
+		});
+		if (toggleBtn) { toggleBtn.click(); return 'expanded: ' + toggleBtn.textContent.trim(); }
+
+		return 'no comment button found';
 	`)
-	logger.Debug("[browser_comment_zhihu] step1 expand: %s", r1)
+	logger.Debug("[browser_comment_zhihu] step1a: %s", r1)
 	if err != nil {
-		return mcp.NewToolResultError(fmt.Sprintf("step1 failed: %v", err)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("step1a failed: %v", err)), nil
 	}
 
-	// Wait for the Draft.js editor to appear (poll up to 3s)
+	// Step 1b: if we expanded comments (not directly clicked 添加评论), now find and
+	// click the "添加评论" input placeholder that appears inside the expanded section.
+	// Poll up to 3s for it to appear.
+	if r1 != "editor already open" && r1 != "clicked 添加评论" {
+		var addClicked bool
+		for range 15 {
+			time.Sleep(200 * time.Millisecond)
+			res, _ := browser.ExecuteJS(page, `
+				// Already open after expand?
+				if (document.querySelector('.public-DraftEditor-content')) { return 'editor appeared'; }
+				var addBtn = Array.from(document.querySelectorAll('button,span,a,div')).find(function(e) {
+					return e.textContent.replace(/\u200b/g,'').trim() === '添加评论';
+				});
+				if (addBtn) { addBtn.click(); return 'clicked 添加评论'; }
+				return 'waiting';
+			`)
+			if res == "clicked 添加评论" || res == "editor appeared" {
+				addClicked = true
+				break
+			}
+		}
+		if !addClicked {
+			return mcp.NewToolResultError(fmt.Sprintf("could not find 添加评论 after expanding comments (step1=%s)", r1)), nil
+		}
+	}
+
+	// Step 1c: wait for the Draft.js editor to appear (poll up to 3s)
 	var editorReady bool
 	for range 15 {
 		time.Sleep(200 * time.Millisecond)
@@ -489,7 +514,7 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 		}
 	}
 	if !editorReady {
-		return mcp.NewToolResultError(fmt.Sprintf("editor did not appear after clicking comment button (step1=%s)", r1)), nil
+		return mcp.NewToolResultError(fmt.Sprintf("editor did not appear after clicking 添加评论 (step1=%s)", r1)), nil
 	}
 
 	// Step 2: insert text into Draft.js editor via ClipboardEvent paste.
