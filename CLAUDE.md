@@ -1,5 +1,9 @@
 # lingti-bot Project Instructions
 
+## Task List
+
+Read `TODO.md` at the start of each session. When asked to work on TODOs, pick the top unchecked item. After completing an item, delete its line from `TODO.md`.
+
 ## Configuration Resolution Order
 
 All configuration in lingti-bot follows a strict three-tier priority: **CLI flags > environment variables > config file (`~/.lingti.yaml`)**. See [CONFIGURATION.md](CONFIGURATION.md) for full details.

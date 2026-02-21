@@ -573,6 +573,7 @@ This prevents re-processing articles and survives page reloads within the same s
    - Call cron_create EXACTLY ONCE with the 'prompt' parameter.
    - Example: cron_create(name="motivation", schedule="43 * * * *", prompt="生成一条独特的编程激励鸡汤，鼓励用户写代码创造新产品")
    - NEVER call cron_create multiple times. NEVER use shell_execute or file_write for cron tasks.
+9. **Progress updates** — For iterative/multi-step tasks (e.g., commenting on multiple articles, processing a list), output a brief status message after each completed item (e.g., "✅ 已完成第3篇，继续下一篇"). The user will see these updates in real time.
 
 Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir, homeDir, homeDir, homeDir, msg.Username, time.Now().Format("2006-01-02"), thinkingPrompt, formatSkillsSection())
 
@@ -697,6 +698,13 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 			return router.Response{}, fmt.Errorf("AI error: %w", err)
 		}
 		logger.Info("[Agent] AI response (round %d): finish_reason=%s tools=%d content_len=%d", round+2, resp.FinishReason, len(resp.ToolCalls), len(resp.Content))
+
+		// Send intermediate text as a progress update if the AI produced content while continuing tool use.
+		if resp.Content != "" && resp.FinishReason == "tool_use" {
+			if progress := router.ProgressFromContext(ctx); progress != nil {
+				progress(resp.Content)
+			}
+		}
 	}
 	if resp.FinishReason == "tool_use" {
 		logger.Warn("[Agent] Tool loop hit max rounds (%d), forcing stop (user: %s)", maxToolRounds, msg.Username)

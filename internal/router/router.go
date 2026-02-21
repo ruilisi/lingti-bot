@@ -48,6 +48,22 @@ type Platform interface {
 	SetMessageHandler(handler func(msg Message))
 }
 
+// ProgressFunc sends an intermediate progress message to the user.
+type ProgressFunc func(text string)
+
+type progressKeyType struct{}
+
+// ContextWithProgress attaches a ProgressFunc to the context.
+func ContextWithProgress(ctx context.Context, fn ProgressFunc) context.Context {
+	return context.WithValue(ctx, progressKeyType{}, fn)
+}
+
+// ProgressFromContext retrieves the ProgressFunc from the context, or nil.
+func ProgressFromContext(ctx context.Context) ProgressFunc {
+	fn, _ := ctx.Value(progressKeyType{}).(ProgressFunc)
+	return fn
+}
+
 // MessageHandler processes incoming messages and returns responses
 type MessageHandler func(ctx context.Context, msg Message) (Response, error)
 
@@ -92,6 +108,25 @@ func (r *Router) handleMessage(msg Message) {
 	defer cancel()
 
 	logger.Info("[Router] Message from %s/%s: %s", msg.Platform, msg.Username, msg.Text)
+
+	// Attach a progress callback so the agent can send intermediate updates.
+	r.mu.RLock()
+	plat, platOK := r.platforms[msg.Platform]
+	r.mu.RUnlock()
+	if platOK {
+		progressResp := Response{
+			ThreadID: msg.ThreadID,
+			Metadata: msg.Metadata,
+		}
+		ctx = ContextWithProgress(ctx, func(text string) {
+			progressResp.Text = text
+			sendCtx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			defer cancel()
+			if err := plat.Send(sendCtx, msg.ChannelID, progressResp); err != nil {
+				logger.Warn("[Router] Failed to send progress: %v", err)
+			}
+		})
+	}
 
 	// Call the message handler
 	resp, err := r.handler(ctx, msg)
