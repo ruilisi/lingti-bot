@@ -485,21 +485,47 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 
 	// Step 1b: if we expanded comments (not directly clicked 添加评论), now find and
 	// click the "添加评论" input placeholder that appears inside the expanded section.
-	// Poll up to 3s for it to appear.
+	// Poll up to 4s for it to appear.
+	// IMPORTANT: textContent is recursive, so querying 'div' would match any ancestor
+	// that contains "添加评论" in its subtree. We restrict to elements that either:
+	//   (a) have no child elements (leaf nodes), or
+	//   (b) are known interactive types (button, span, a)
+	//   (c) are the DraftEditor placeholder div specifically
 	if r1 != "editor already open" && r1 != "clicked 添加评论" {
 		var addClicked bool
-		for range 15 {
+		for range 20 {
 			time.Sleep(200 * time.Millisecond)
 			res, _ := browser.ExecuteJS(page, `
 				// Already open after expand?
 				if (document.querySelector('.public-DraftEditor-content')) { return 'editor appeared'; }
-				var addBtn = Array.from(document.querySelectorAll('button,span,a,div')).find(function(e) {
+
+				// Specific known selectors for the comment input area on Zhihu question pages
+				var specific = document.querySelector(
+					'.CommentInput, [class*="CommentInput"], ' +
+					'.DraftEditor-root, [class*="comment-input"], ' +
+					'[placeholder="添加评论"], [data-placeholder="添加评论"]'
+				);
+				if (specific) { specific.click(); return 'clicked specific'; }
+
+				// button/span/a with exact text — safe (not recursive parent match)
+				var btn = Array.from(document.querySelectorAll('button,span,a')).find(function(e) {
 					return e.textContent.replace(/\u200b/g,'').trim() === '添加评论';
 				});
-				if (addBtn) { addBtn.click(); return 'clicked 添加评论'; }
+				if (btn) { btn.click(); return 'clicked btn: ' + btn.tagName; }
+
+				// Leaf div/label with exact text (no child elements that also contain the text)
+				var leaf = Array.from(document.querySelectorAll('div,label')).find(function(e) {
+					if (e.textContent.replace(/\u200b/g,'').trim() !== '添加评论') return false;
+					// Make sure no child element also has this text (i.e. we are the real target)
+					return !Array.from(e.children).some(function(c) {
+						return c.textContent.replace(/\u200b/g,'').trim() === '添加评论';
+					});
+				});
+				if (leaf) { leaf.click(); return 'clicked leaf: ' + leaf.className.slice(0,40); }
+
 				return 'waiting';
 			`)
-			if res == "clicked 添加评论" || res == "editor appeared" {
+			if res != "waiting" {
 				addClicked = true
 				break
 			}
@@ -509,9 +535,9 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 		}
 	}
 
-	// Step 1c: wait for the Draft.js editor to appear (poll up to 3s)
+	// Step 1c: wait for the Draft.js editor to appear (poll up to 4s)
 	var editorReady bool
-	for range 15 {
+	for range 20 {
 		time.Sleep(200 * time.Millisecond)
 		check, _ := browser.ExecuteJS(page, `document.querySelector('.public-DraftEditor-content') ? 'yes' : 'no'`)
 		if check == "yes" {
