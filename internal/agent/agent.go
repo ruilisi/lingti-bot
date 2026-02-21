@@ -500,19 +500,23 @@ Use the page's UI elements (search boxes, buttons, menus) to accomplish the task
 - Seeing a page snapshot in a tool result means: "here is the current state — what should I do next?"
 - If you see a login modal or any obstacle, handle it (dismiss, log in, or report to user) — do not silently stop.
 
-**Zhihu (知乎) commenting — USE browser_comment_zhihu TOOL DIRECTLY:**
-CRITICAL: When on a Zhihu article/answer page (zhuanlan.zhihu.com or zhihu.com/question), use the browser_comment_zhihu tool to post a comment. DO NOT:
-- Manually click "添加评论" or "展开评论" buttons
-- Use browser_click or browser_execute_js to interact with the comment modal
-- Remove or interact with overlay divs
-- Try to find textareas or editors manually
-Just call: browser_comment_zhihu(comment="your comment text")
-The tool handles everything: opening the comment box, typing, and submitting.
+**Zhihu (知乎) commenting — EXACT VERIFIED METHOD:**
+Zhihu uses a Draft.js editor. Direct DOM manipulation (innerHTML, value=, execCommand insertText) does NOT update Draft.js internal state — the 发布 button will stay DISABLED. You MUST use ClipboardEvent paste.
 
-If browser_comment_zhihu fails, THEN use this fallback JS sequence:
-Step 1: browser_execute_js "var btn=document.querySelector('button.ContentItem-action');if(btn){btn.click();return 'clicked';}return 'not found';"
-Step 2: browser_execute_js "var ed=document.querySelector('.public-DraftEditor-content');if(!ed){return 'editor not found';}ed.click();ed.focus();document.execCommand('selectAll',false);var dt=new DataTransfer();dt.setData('text/plain','COMMENT_TEXT');ed.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true}));return 'pasted';"
-Step 3: browser_execute_js "var btn=Array.from(document.querySelectorAll('button.Button--primary')).find(function(b){return b.textContent.trim()==='发布';});if(btn&&!btn.disabled){btn.click();return 'submitted';}if(btn&&btn.disabled){return 'button disabled';}return 'submit btn not found';"
+PREFERRED: call browser_comment_zhihu(comment="...") — handles everything automatically.
+
+If using mcp_chrome_evaluate_script instead, use EXACTLY this 3-step sequence:
+
+Step 1 — Click the comment trigger (button with 评论 in text):
+  function: "() => { var btn = Array.from(document.querySelectorAll('button,span')).find(function(e){ var t = e.textContent.replace(/\u200b/g,'').trim(); return /^[\d\s]*条?评论$/.test(t) || t === '添加评论'; }); if(btn){btn.click();return 'clicked:'+btn.textContent.trim();} return 'not found'; }"
+
+Step 2 — Wait ~1s for editor to appear, then paste via ClipboardEvent (CRITICAL — do NOT use execCommand or innerHTML):
+  function: "() => { var ed = document.querySelector('.public-DraftEditor-content'); if(!ed){return 'editor not found';} ed.click(); ed.focus(); document.execCommand('selectAll',false); var dt = new DataTransfer(); dt.setData('text/plain', 'COMMENT_TEXT'); ed.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true})); return 'pasted'; }"
+
+Step 3 — Wait ~600ms then click 发布 by text match (querySelector returns search button first, MUST find by text):
+  function: "() => { var btn = Array.from(document.querySelectorAll('button')).find(function(b){ return b.textContent.replace(/\u200b/g,'').trim() === '发布'; }); if(btn&&!btn.disabled){btn.click();return 'submitted';} if(btn&&btn.disabled){return 'button disabled — paste step likely failed';} return 'submit btn not found'; }"
+
+Replace COMMENT_TEXT with actual comment. If 发布 is disabled after paste, retry step 2 — the editor may not have focused properly.
 DO NOT click "写回答" — that writes a full answer, not a comment.
 
 **Handling modals/overlays:** If an element is blocked by a modal or overlay (error message mentions "element covered by"), use browser_execute_js to dismiss it. Example scripts:
