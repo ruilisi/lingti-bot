@@ -16,6 +16,7 @@
 - 🚀 **零依赖部署** — 单个 30MB 二进制文件，无需 Node.js/Python 运行时，**一行命令**安装即用
 - ☁️ **[云中继](docs/cloud-relay.md)加持** — 无需公网服务器、域名备案、HTTPS 证书，5 分钟接入企业微信/微信公众号
 - 🤖 **[浏览器自动化](docs/browser-automation.md)** — 内置完整 CDP 控制引擎，可接管已有 Chrome 窗口，快照-操作模式精准定位元素，无需 Puppeteer/Playwright/Node.js
+- 🌐 **[社交平台自动化](docs/social-platform-automation.md)** — 通过 MCP + Chrome 浏览器能力，AI 代操作知乎、小红书等内容平台，自动发帖、评论、互动，解放运营双手
 - 🛠️ **75+ MCP 工具** — 覆盖文件、Shell、系统、网络、日历、Git、GitHub 等全场景
 - 🌏 **中国平台原生支持** — 钉钉、飞书、企业微信、微信公众号开箱即用
 - 🔌 **嵌入式友好** — 可编译到 ARM/MIPS，轻松部署到树莓派、路由器、NAS
@@ -88,6 +89,36 @@ lingti-bot relay --platform wecom --provider deepseek --api-key sk-xxx
 </p>
 
 直接在企业微信中用自然语言浏览、查找、传输电脑上的文件。无需远程桌面，无需 U 盘，对 AI 说一句话即可。
+
+### 社交平台自动化 — AI 驱动的内容平台运营
+
+> 通过 MCP + Chrome 浏览器能力，让 AI 代替你操作知乎、小红书等内容平台
+
+lingti-bot 将浏览器自动化能力与 AI 深度结合，针对中国主流内容平台提供**智能化运营**支持。不是简单的脚本录制回放，而是 AI 理解页面语义后的精准操作。
+
+**已支持平台：**
+
+| 平台 | 发帖/回答 | 评论 | 点赞/收藏 | 状态 |
+|------|:---------:|:----:|:---------:|------|
+| **知乎** | ✅ | ✅ | ✅ | 已支持 |
+| **小红书** | 🔜 | 🔜 | 🔜 | 规划中 |
+| **微博** | 🔜 | 🔜 | 🔜 | 规划中 |
+| **抖音（网页版）** | 🔜 | 🔜 | 🔜 | 规划中 |
+| **B站** | 🔜 | 🔜 | 🔜 | 规划中 |
+| **今日头条** | 🔜 | 🔜 | 🔜 | 规划中 |
+
+**使用示例：**
+
+```
+"帮我在知乎上回答这个问题，内容围绕 Go 语言的优势"
+"打开知乎这篇文章，帮我写一条评论"
+"在小红书发一篇关于效率工具的笔记"
+"帮我给这篇知乎回答点个赞"
+```
+
+**工作原理：** AI 通过 MCP 协议调用浏览器工具（CDP 或 Chrome MCP），在你已登录的 Chrome 中操作，**复用你的登录态**，无需提供账号密码。AI 读取页面无障碍树快照，理解每个按钮和输入框的含义，像人一样精准操作。
+
+> 📖 **详细文档：[社交平台自动化指南](docs/social-platform-automation.md)**
 
 ### 浏览器自动化 — 让 AI 像人一样操控浏览器
 
@@ -682,6 +713,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 - [定时任务指南](docs/cron-jobs.md) - AI 智能任务 vs 静态消息、Cron 表达式、管理命令
 - [浏览器自动化指南](docs/browser-automation.md) - CDP 引擎、接管已有 Chrome、14 个工具完整参考、典型场景与故障排除
 - [浏览器 AI 操作规则](docs/browser-agent-rules.md) - AI agent 的所有浏览器行为规则：快照法则、搜索行为、弹窗处理、批量操作、连接模式、常见错误纠正
+- [社交平台自动化指南](docs/social-platform-automation.md) - 知乎、小红书等内容平台的 AI 自动化运营
 - [OpenClaw 技术特性对比](docs/openclaw-feature-comparison.md) - 详细功能差异分析
 
 ---
