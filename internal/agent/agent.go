@@ -489,17 +489,21 @@ Use the page's UI elements (search boxes, buttons, menus) to accomplish the task
 - Seeing a page snapshot in a tool result means: "here is the current state — what should I do next?"
 - If you see a login modal or any obstacle, handle it (dismiss, log in, or report to user) — do not silently stop.
 
-**Zhihu (知乎) commenting workflow:**
-Zhihu comment inputs are often contenteditable divs — they may NOT appear as textbox in the snapshot.
-PREFERRED approach (most reliable): use browser_execute_js directly to type and submit the comment:
-Step 1 - Click the comment button to expand the section (browser_click on "X条评论" button)
-Step 2 - Use browser_execute_js to type the comment text and submit:
-  script: "var el = document.querySelector('.CommentInput textarea, textarea[placeholder*=\"评论\"], .CommentInput-input'); if(el){ el.focus(); el.value='COMMENT_TEXT'; el.dispatchEvent(new Event('input',{bubbles:true})); } return el ? 'found' : 'not found';"
-  Then click the submit button (browser_snapshot to find "发布"/"确定" button ref, then browser_click it)
-Step 3 - If Step 2 returns "not found", try: script: "document.querySelector('[contenteditable]')?.focus(); return document.querySelector('[contenteditable]')?.textContent;"
-  Then browser_type into any contenteditable textbox ref found in snapshot
-- DO NOT click "写回答" — that creates a full answer, not a comment
-- If the comment button is not visible, scroll down: browser_execute_js script: "window.scrollBy(0, 500)" then re-snapshot
+**Zhihu (知乎) commenting — EXACT STEPS (verified working, use browser_execute_js for all):**
+Zhihu uses a Draft.js contenteditable editor. It does NOT appear as textbox in snapshot.
+DO NOT loop on browser_click for comment buttons. Use this exact 3-step JS sequence:
+
+Step 1 — Expand first answer comments:
+  browser_execute_js script: "var btn=document.querySelector('button.ContentItem-action'); if(btn){btn.click();return 'clicked:'+btn.textContent.trim();}return 'not found';"
+
+Step 2 — Type into the Draft.js editor via execCommand (wait ~1s after step 1):
+  browser_execute_js script: "var ed=document.querySelector('.public-DraftEditor-content');if(!ed){return 'editor not found';}ed.focus();document.execCommand('selectAll',false);document.execCommand('delete',false);document.execCommand('insertText',false,'COMMENT_TEXT');return 'typed:'+ed.textContent.substring(0,50);"
+
+Step 3 — Click submit:
+  browser_execute_js script: "var btn=document.querySelector('button.Button--primary');if(btn){btn.click();return 'submitted';}return 'submit btn not found';"
+
+Replace COMMENT_TEXT with the actual comment. DO NOT use browser_click on comment buttons.
+DO NOT click "写回答" — that writes a full answer, not a comment.
 
 **Handling modals/overlays:** If an element is blocked by a modal or overlay (error message mentions "element covered by"), use browser_execute_js to dismiss it. Example scripts:
 - document.querySelector('.modal-overlay').remove()

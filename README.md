@@ -19,7 +19,7 @@
 - 🛠️ **75+ MCP 工具** — 覆盖文件、Shell、系统、网络、日历、Git、GitHub 等全场景
 - 🌏 **中国平台原生支持** — 钉钉、飞书、企业微信、微信公众号开箱即用
 - 🔌 **嵌入式友好** — 可编译到 ARM/MIPS，轻松部署到树莓派、路由器、NAS
-- 🧠 **多 AI 后端** — 集成 Claude、DeepSeek、Kimi、MiniMax、Gemini 等 [15 种 AI 服务](docs/ai-providers.md)，按需切换
+- 🧠 **多 AI 后端** — 集成 Claude、DeepSeek、Kimi、MiniMax、Gemini 等 [16 种 AI 服务](docs/ai-providers.md)，按需切换
 
 支持企业微信、飞书、钉钉、Slack、Telegram、Discord、WhatsApp、LINE、Teams 等 [19 种聊天平台](docs/chat-platforms.md) 接入，既可通过**云中继 5 分钟秒接**，也可 [OpenClaw](docs/openclaw-reference.md) 式**传统自建部署**。查看 [开发路线图](docs/roadmap.md) 了解更多功能规划。
 
@@ -317,7 +317,7 @@ make build
 |------|------|
 | **上下文记忆** | 每个用户独立的对话上下文，最近 50 条消息 |
 | **自动过期** | 对话 60 分钟无活动后自动清除 |
-| **多 AI 后端** | [15 种 AI 服务](docs/ai-providers.md)按需切换 |
+| **多 AI 后端** | [16 种 AI 服务](docs/ai-providers.md)按需切换 |
 | **对话管理** | `/new`、`/reset`、`新对话` 命令重置对话 |
 
 ### 语音交互 — 解放双手，畅快对话
@@ -364,7 +364,7 @@ lingti-bot skills info github
 | **多平台消息网关** | [19 种聊天平台](docs/chat-platforms.md) | 微信公众号、企业微信、Slack、飞书一键接入，支持云中继 |
 | **MCP 工具集** | 75+ 本地系统工具 | 文件、Shell、系统、网络、日历、Git、GitHub 等全覆盖 |
 | **Skills** | 模块化能力扩展 | 8 个内置 Skill，支持自定义和项目级扩展 |
-| **智能对话** | 多轮对话与记忆 | 上下文记忆、[15 种 AI 后端](docs/ai-providers.md) |
+| **智能对话** | 多轮对话与记忆 | 上下文记忆、[16 种 AI 后端](docs/ai-providers.md) |
 | **语音交互** | 语音输入/输出 | 本地 whisper-cpp、OpenAI、ElevenLabs 多引擎支持 |
 
 ## 云中继：零门槛接入企业消息平台
@@ -637,7 +637,7 @@ export FEISHU_APP_SECRET="..."
 
 ### 多 AI 后端
 
-支持 **15 种 AI 服务**，涵盖国内外主流大模型平台，按需切换：
+支持 **16 种 AI 服务**，涵盖国内外主流大模型平台，按需切换：
 
 | # | Provider | 名称 | 默认模型 |
 |---|----------|------|----------|
@@ -656,6 +656,7 @@ export FEISHU_APP_SECRET="..."
 | 13 | `spark` | 讯飞星火 (iFlytek) | `generalv3.5` |
 | 14 | `siliconflow` | 硅基流动 (aggregator) | `Qwen/Qwen2.5-72B-Instruct` |
 | 15 | `grok` | Grok (xAI) | `grok-2-latest` |
+| 16 | `ollama` | Ollama (本地) | `llama3.2` |
 
 > 完整列表（含 API Key 获取链接、别名）：[AI 服务列表](docs/ai-providers.md)
 
@@ -670,7 +671,7 @@ lingti-bot relay --provider openai --api-key "sk-xxx" --model "gpt-4o-mini"
 ### 详细文档
 
 - [配置优先级](CONFIGURATION.md) - 命令行参数 > 环境变量 > 配置文件的解析机制
-- [AI 服务列表](docs/ai-providers.md) - 15 种 AI 服务详情、API Key 获取、别名
+- [AI 服务列表](docs/ai-providers.md) - 16 种 AI 服务详情、API Key 获取、别名
 - [聊天平台列表](docs/chat-platforms.md) - 19 种聊天平台详情、配置参数、环境变量
 - [命令行参考](docs/cli-reference.md) - 完整的命令行使用文档
 - [Skills 指南](docs/skills.md) - Skills 系统详解：创建、发现、配置

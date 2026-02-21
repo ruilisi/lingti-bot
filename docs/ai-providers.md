@@ -1,8 +1,8 @@
 # Supported AI Providers / 支持的 AI 服务
 
-lingti-bot 支持 **15 种 AI 服务**，涵盖国内外主流大模型平台，按需切换。所有 provider 均通过 `--provider` 参数指定，也可在 `lingti-bot onboard` 交互式向导中选择。
+lingti-bot 支持 **16 种 AI 服务**，涵盖国内外主流大模型平台及本地模型，按需切换。所有 provider 均通过 `--provider` 参数指定，也可在 `lingti-bot onboard` 交互式向导中选择。
 
-lingti-bot supports **15 AI providers** covering mainstream LLM platforms globally. Select via `--provider` flag or the `lingti-bot onboard` interactive wizard.
+lingti-bot supports **16 AI providers** covering mainstream LLM platforms globally plus local models. Select via `--provider` flag or the `lingti-bot onboard` interactive wizard.
 
 ## Provider List / 服务列表
 
@@ -23,6 +23,7 @@ lingti-bot supports **15 AI providers** covering mainstream LLM platforms global
 | 13 | `spark` | Spark / 讯飞星火 (iFlytek) | `generalv3.5` | [console.xfyun.cn](https://console.xfyun.cn/) |
 | 14 | `siliconflow` | SiliconFlow / 硅基流动 (aggregator) | `Qwen/Qwen2.5-72B-Instruct` | [cloud.siliconflow.cn](https://cloud.siliconflow.cn/) |
 | 15 | `grok` | Grok (xAI) | `grok-2-latest` | [console.x.ai](https://console.x.ai/) |
+| 16 | `ollama` | Ollama (local / 本地) | `llama3.2` | No API key needed / 无需密钥 |
 
 ## Aliases / 别名
 
@@ -40,6 +41,7 @@ lingti-bot supports **15 AI providers** covering mainstream LLM platforms global
 | `bytedance`, `volcengine` | `doubao` |
 | `iflytek`, `xunfei` | `spark` |
 | `xai` | `grok` |
+| `tencent`, `hungyuan` | `hunyuan` |
 
 ## Usage / 用法
 
@@ -57,6 +59,63 @@ lingti-bot relay --provider siliconflow --api-key sk-xxx --base-url https://api.
 # Override default model / 覆盖默认模型
 lingti-bot relay --provider qwen --api-key sk-xxx --model qwen-max
 ```
+
+## Ollama (Local Models / 本地模型)
+
+Ollama 在本地运行开源大模型，无需 API 密钥，默认监听 `http://localhost:11434`。
+
+Ollama runs open-source LLMs locally with no API key required, listening on `http://localhost:11434` by default.
+
+### Setup / 安装
+
+```bash
+# Install Ollama / 安装
+# macOS
+brew install ollama
+
+# Linux
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull a model / 拉取模型
+ollama pull llama3.2
+
+# Start the server (if not running as a service) / 启动服务
+ollama serve
+
+# Stop the server / 停止服务
+# macOS (installed via brew or .dmg): quit from menu bar, or:
+launchctl stop com.ollama.ollama
+# Linux (systemd):
+sudo systemctl stop ollama
+# Foreground process: Ctrl+C
+```
+
+### Usage / 用法
+
+```bash
+# Default model (llama3.2) / 默认模型
+lingti-bot relay --provider ollama
+
+# Specify a model / 指定模型
+lingti-bot relay --provider ollama --model mistral
+lingti-bot relay --provider ollama --model qwen2.5:7b
+lingti-bot relay --provider ollama --model deepseek-r1:8b
+
+# Connect to a remote Ollama instance / 连接远程实例
+lingti-bot relay --provider ollama --base-url http://192.168.1.100:11434/v1
+```
+
+### Available Models / 可用模型
+
+Run `ollama list` to see installed models. Popular choices:
+
+| Model | Size | Notes |
+|-------|------|-------|
+| `llama3.2` | 3B | Default, good general-purpose / 默认，通用 |
+| `llama3.2:1b` | 1B | Lightweight / 轻量 |
+| `mistral` | 7B | Strong reasoning / 推理能力强 |
+| `qwen2.5:7b` | 7B | Good Chinese support / 中文支持好 |
+| `deepseek-r1:8b` | 8B | Code & reasoning / 代码与推理 |
 
 ## Notes / 说明
 
