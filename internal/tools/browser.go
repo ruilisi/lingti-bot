@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-rod/rod/lib/proto"
@@ -598,6 +599,199 @@ func BrowserCommentZhihu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallT
 		return mcp.NewToolResultText(fmt.Sprintf("Comment posted successfully: %q", comment)), nil
 	}
 	return mcp.NewToolResultError(fmt.Sprintf("comment may not have submitted: %s (expand=%s, type=%s)", r3, r1, r2)), nil
+}
+
+// BrowserCommentXiaohongshu posts a comment on a Xiaohongshu note using the verified JS recipe.
+// The note detail page must already be open. This tool handles the full flow:
+// 1. Click "说点什么..." or "评论" to activate the comment editor
+// 2. Paste text via ClipboardEvent (the only method that enables the 发送 button)
+// 3. Click 发送 to submit
+func BrowserCommentXiaohongshu(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	comment, ok := req.Params.Arguments["comment"].(string)
+	if !ok || comment == "" {
+		return mcp.NewToolResultError("comment is required"), nil
+	}
+
+	b := browser.Instance()
+	page, err := b.ActivePage()
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("failed to get page: %v", err)), nil
+	}
+
+	// Step 1: activate the comment editor.
+	// The editor may not be focused/visible yet. Click "说点什么..." placeholder,
+	// "评论" button, or the editor itself to activate it.
+	r1, err := browser.ExecuteJS(page, `
+		// Already have editor?
+		var ed = document.querySelector('#content-textarea');
+		if (ed && ed.textContent.trim() !== '' && ed === document.activeElement) {
+			return 'editor already active';
+		}
+
+		// Try clicking "说点什么..." placeholder (the comment input area at the bottom)
+		var placeholder = document.querySelector('.comment-input, .input-box, [class*="comment-input"]');
+		if (placeholder) { placeholder.click(); return 'clicked comment input area'; }
+
+		// Try clicking "评论" button in the bottom action bar
+		var commentBtn = Array.from(document.querySelectorAll('span, button, div')).find(function(e) {
+			var t = e.textContent.trim();
+			return t === '评论' && e.children.length <= 2;
+		});
+		if (commentBtn) { commentBtn.click(); return 'clicked 评论 button'; }
+
+		// Editor exists but just needs focus
+		if (ed) { ed.click(); ed.focus(); return 'focused editor'; }
+
+		return 'no comment entry found';
+	`)
+	logger.Debug("[browser_comment_xiaohongshu] step1 activate: %s", r1)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("step1 failed: %v", err)), nil
+	}
+	if r1 == "no comment entry found" {
+		return mcp.NewToolResultError("comment editor not found — make sure you are on a Xiaohongshu note detail page"), nil
+	}
+
+	// Wait for editor to appear/activate after clicking
+	if r1 != "editor already active" {
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	// Step 1b: verify editor is present (poll up to 3s)
+	var editorReady bool
+	for range 15 {
+		check, _ := browser.ExecuteJS(page, `document.querySelector('#content-textarea') ? 'yes' : 'no'`)
+		if check == "yes" {
+			editorReady = true
+			break
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	if !editorReady {
+		return mcp.NewToolResultError("comment editor (#content-textarea) did not appear after activation"), nil
+	}
+
+	// Step 2: paste comment text via ClipboardEvent.
+	// Setting textContent or innerText directly does NOT update the framework state,
+	// so the 发送 button stays disabled. Dispatching a paste ClipboardEvent triggers
+	// the framework's internal handler which enables the button.
+	jsonComment, _ := json.Marshal(comment)
+	r2, err := browser.ExecuteJS(page, fmt.Sprintf(`
+		var ed = document.querySelector('#content-textarea');
+		if (!ed) { return 'editor not found'; }
+		ed.click();
+		ed.focus();
+		// Clear existing content first
+		ed.textContent = '';
+		ed.dispatchEvent(new Event('input', { bubbles: true }));
+		// Paste new content
+		var dt = new DataTransfer();
+		dt.setData('text/plain', %s);
+		ed.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+		return 'pasted';
+	`, string(jsonComment)))
+	logger.Debug("[browser_comment_xiaohongshu] step2 paste: %s", r2)
+	if err != nil || r2 == "editor not found" {
+		return mcp.NewToolResultError(fmt.Sprintf("step2 paste failed: %v %s", err, r2)), nil
+	}
+
+	// Wait for framework to process the paste event
+	time.Sleep(600 * time.Millisecond)
+
+	// Step 3: click the 发送 submit button.
+	r3, err := browser.ExecuteJS(page, `
+		var btn = Array.from(document.querySelectorAll('button')).find(function(b) {
+			return b.textContent.trim() === '发送';
+		});
+		if (btn && !btn.disabled) { btn.click(); return 'submitted'; }
+		if (btn && btn.disabled) { return 'submit button is disabled (comment may be empty or framework did not register paste)'; }
+		return 'submit button not found';
+	`)
+	logger.Debug("[browser_comment_xiaohongshu] step3 submit: %s", r3)
+	if err != nil {
+		return mcp.NewToolResultError(fmt.Sprintf("step3 submit failed: %v", err)), nil
+	}
+
+	if r3 == "submitted" {
+		return mcp.NewToolResultText(fmt.Sprintf("Comment posted successfully on Xiaohongshu: %q", comment)), nil
+	}
+	return mcp.NewToolResultError(fmt.Sprintf("comment may not have submitted: %s (paste=%s)", r3, r2)), nil
+}
+
+// visitedURLs tracks URLs that have been processed during iterative browser operations.
+var visitedURLs = struct {
+	sync.Mutex
+	urls map[string]bool
+}{urls: make(map[string]bool)}
+
+// BrowserVisited checks or marks a URL as visited. Used for iterative tasks
+// (e.g., commenting on all articles in search results) to skip already-processed pages.
+func BrowserVisited(_ context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	action, _ := req.Params.Arguments["action"].(string)
+
+	switch action {
+	case "check":
+		url, _ := req.Params.Arguments["url"].(string)
+		if url == "" {
+			return mcp.NewToolResultError("url is required for check action"), nil
+		}
+		// Normalize: strip query params for Xiaohongshu note URLs
+		normalized := normalizeXHSURL(url)
+		visitedURLs.Lock()
+		visited := visitedURLs.urls[normalized]
+		visitedURLs.Unlock()
+		if visited {
+			return mcp.NewToolResultText("visited"), nil
+		}
+		return mcp.NewToolResultText("not_visited"), nil
+
+	case "mark":
+		url, _ := req.Params.Arguments["url"].(string)
+		if url == "" {
+			return mcp.NewToolResultError("url is required for mark action"), nil
+		}
+		normalized := normalizeXHSURL(url)
+		visitedURLs.Lock()
+		visitedURLs.urls[normalized] = true
+		count := len(visitedURLs.urls)
+		visitedURLs.Unlock()
+		return mcp.NewToolResultText(fmt.Sprintf("marked as visited (total: %d)", count)), nil
+
+	case "list":
+		visitedURLs.Lock()
+		urls := make([]string, 0, len(visitedURLs.urls))
+		for u := range visitedURLs.urls {
+			urls = append(urls, u)
+		}
+		visitedURLs.Unlock()
+		if len(urls) == 0 {
+			return mcp.NewToolResultText("no visited URLs"), nil
+		}
+		return mcp.NewToolResultText(fmt.Sprintf("visited URLs (%d):\n%s", len(urls), strings.Join(urls, "\n"))), nil
+
+	case "clear":
+		visitedURLs.Lock()
+		visitedURLs.urls = make(map[string]bool)
+		visitedURLs.Unlock()
+		return mcp.NewToolResultText("cleared all visited URLs"), nil
+
+	default:
+		return mcp.NewToolResultError("action must be one of: check, mark, list, clear"), nil
+	}
+}
+
+// normalizeXHSURL strips xsec_token and other query params from Xiaohongshu URLs
+// so the same note is recognized regardless of how it was navigated to.
+func normalizeXHSURL(rawURL string) string {
+	// Extract the note ID path for xiaohongshu.com URLs
+	if strings.Contains(rawURL, "xiaohongshu.com") {
+		// URLs look like: https://www.xiaohongshu.com/explore/697ec7e7000000002202d5cc?xsec_token=...
+		// or: https://www.xiaohongshu.com/search_result/697ec7e7000000002202d5cc?xsec_token=...
+		if idx := strings.Index(rawURL, "?"); idx != -1 {
+			return rawURL[:idx]
+		}
+	}
+	return rawURL
 }
 
 // BrowserExecuteJS runs JavaScript on the active page.

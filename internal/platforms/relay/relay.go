@@ -380,7 +380,7 @@ func (p *Platform) sendWebhook(ctx context.Context, channelID string, resp route
 	outgoing := OutgoingResponse{
 		Type:      "response",
 		MessageID: resp.Metadata["message_id"],
-		Platform:  "relay",
+		Platform:  p.config.Platform,
 		ChannelID: channelID,
 		Text:      resp.Text,
 	}
@@ -445,7 +445,7 @@ func (p *Platform) sendFileViaWebhook(ctx context.Context, channelID, filePath, 
 
 	outgoing := OutgoingResponse{
 		Type:      "response",
-		Platform:  "relay",
+		Platform:  p.config.Platform,
 		ChannelID: channelID,
 		Files: []OutgoingFile{
 			{

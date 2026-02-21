@@ -527,6 +527,17 @@ Step 3 — Wait ~600ms then click 发布 by text match (querySelector returns se
 Replace COMMENT_TEXT with actual comment. If 发布 is disabled after paste, retry step 2 — the editor may not have focused properly.
 DO NOT click "写回答" — that writes a full answer, not a comment.
 
+**Xiaohongshu (小红书) commenting — EXACT VERIFIED METHOD:**
+Xiaohongshu uses a contenteditable <p id="content-textarea">. Direct DOM manipulation (textContent=, innerText=) does NOT update the framework state — the 发送 button stays DISABLED. You MUST use ClipboardEvent paste.
+
+PREFERRED: call browser_comment_xiaohongshu(comment="...") — handles everything automatically.
+
+If using mcp_chrome_evaluate_script instead, use EXACTLY this 2-step sequence:
+Step 1 — Paste comment via ClipboardEvent:
+  function: "() => { var ed = document.querySelector('#content-textarea'); if(!ed) return 'not found'; ed.focus(); ed.textContent=''; ed.dispatchEvent(new Event('input',{bubbles:true})); var dt = new DataTransfer(); dt.setData('text/plain', 'COMMENT_TEXT'); ed.dispatchEvent(new ClipboardEvent('paste',{clipboardData:dt,bubbles:true,cancelable:true})); return 'pasted'; }"
+Step 2 — Click 发送:
+  function: "() => { var btn = Array.from(document.querySelectorAll('button')).find(function(b){ return b.textContent.trim() === '发送'; }); if(btn&&!btn.disabled){btn.click();return 'submitted';} if(btn&&btn.disabled){return 'button disabled — paste step likely failed';} return 'submit btn not found'; }"
+
 **Handling modals/overlays:** If an element is blocked by a modal or overlay (error message mentions "element covered by"), use browser_execute_js to dismiss it. Example scripts:
 - document.querySelector('.modal-overlay').remove()
 - document.querySelector('.dialog-close-btn').click()
@@ -538,6 +549,17 @@ Then re-snapshot and continue.
 - 关注 (follow) → browser_click_all with selector "[class*='follow']", skip_selector "[class*='follow'].active"
 If click count is 0, inspect with: return Array.from(document.querySelectorAll('span,button')).filter(e=>e.children.length<5).slice(0,10).map(e=>e.className+' | '+e.textContent.trim().slice(0,15)).join('\n')
 Do NOT waste rounds — try clicking first, inspect only if it fails.
+
+**Iterative browsing (processing multiple pages):** When the user asks to iterate through search results (e.g., "逐个文章添加评论", "comment on all posts"), use browser_visited to track progress:
+1. On the search results page, collect all article links/titles
+2. For each article: call browser_visited(action="check", url=...) — if "visited", skip it
+3. Click the article to open it, perform the action (comment, like, etc.)
+4. Call browser_visited(action="mark", url=...) to record it
+5. Navigate back to search results and continue with next article
+This prevents re-processing articles and survives page reloads within the same session.
+
+**Xiaohongshu (小红书) like/点赞:** On a note detail page, click the heart icon. Use browser_execute_js:
+  function: "() => { var likeBtn = document.querySelector('.like-wrapper:not(.active), [class*=\"like\"]:not(.active)'); if(likeBtn){likeBtn.click();return 'liked';} return 'already liked or not found'; }"
 
 ## Important Rules
 1. **ALWAYS use tools** - Never tell users to do things manually
@@ -589,9 +611,10 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 			}
 			if count >= 3 && strings.HasPrefix(tc.Name, "browser_") {
 				stallHint = fmt.Sprintf(
-					"\n\n[SYSTEM HINT] You have called %s %d times in a row. STOP and use browser_comment_zhihu tool instead. "+
-						"Call browser_comment_zhihu with the comment text — it handles opening the editor, typing, and submitting automatically. "+
-						"Do NOT keep clicking buttons or interacting with the modal manually.",
+					"\n\n[SYSTEM HINT] You have called %s %d times in a row. STOP and use the dedicated comment tool instead. "+
+						"For Zhihu: call browser_comment_zhihu(comment=\"...\"). "+
+						"For Xiaohongshu: call browser_comment_xiaohongshu(comment=\"...\"). "+
+						"These handle everything automatically. Do NOT keep clicking buttons or interacting manually.",
 					tc.Name, count,
 				)
 			}
@@ -1268,6 +1291,29 @@ func (a *Agent) buildToolsList() []Tool {
 			}),
 		},
 		{
+			Name:        "browser_comment_xiaohongshu",
+			Description: "Post a comment on a Xiaohongshu (小红书) note. Must already be on a Xiaohongshu note detail page (with the comment input visible at the bottom). Automatically types the comment into the editor via ClipboardEvent paste and clicks 发送 to submit. Use this instead of browser_click + browser_type for Xiaohongshu commenting.",
+			InputSchema: jsonSchema(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"comment": map[string]string{"type": "string", "description": "The comment text to post"},
+				},
+				"required": []string{"comment"},
+			}),
+		},
+		{
+			Name:        "browser_visited",
+			Description: "Track visited URLs during iterative browser operations (e.g., commenting on all search results). Use 'check' before processing a page to skip already-visited ones, 'mark' after processing, 'list' to see all visited URLs, 'clear' to reset. URLs are normalized (query params stripped) so the same page is recognized regardless of navigation path.",
+			InputSchema: jsonSchema(map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"action": map[string]string{"type": "string", "description": "One of: check, mark, list, clear"},
+					"url":    map[string]string{"type": "string", "description": "The URL to check or mark (required for check/mark, ignored for list/clear)"},
+				},
+				"required": []string{"action"},
+			}),
+		},
+		{
 			Name:        "browser_screenshot",
 			Description: "Take a screenshot of the current page",
 			InputSchema: jsonSchema(map[string]any{
@@ -1747,6 +1793,11 @@ func (a *Agent) callToolDirect(ctx context.Context, name string, args map[string
 	case "browser_comment_zhihu":
 		comment, _ := args["comment"].(string)
 		return executeBrowserCommentZhihu(ctx, comment)
+	case "browser_comment_xiaohongshu":
+		comment, _ := args["comment"].(string)
+		return executeBrowserCommentXiaohongshu(ctx, comment)
+	case "browser_visited":
+		return executeBrowserVisited(ctx, args)
 	case "browser_click_all":
 		return executeBrowserClickAll(ctx, args)
 	case "browser_screenshot":
