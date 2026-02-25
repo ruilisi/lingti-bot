@@ -12,6 +12,8 @@ lingti-bot supports **16 AI providers** covering mainstream LLM platforms global
 | 2 | `qwen` | Qwen / 通义千问 | `qwen-plus` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | [bailian.console.aliyun.com](https://bailian.console.aliyun.com/) |
 | 3 | `claude` | Claude (Anthropic) | `claude-sonnet-4-20250514` | Anthropic native API | [console.anthropic.com](https://console.anthropic.com/) |
 | 4 | `kimi` | Kimi / Moonshot / 月之暗面 | `moonshot-v1-8k` | `https://api.moonshot.cn/v1` | [platform.moonshot.cn](https://platform.moonshot.cn/) |
+
+> **Kimi thinking models / Kimi 思考模型：** `kimi-k2.5` 等带推理（thinking）能力的模型已支持。lingti-bot 会自动在对话历史中保留 `reasoning_content`，确保 tool call 多轮对话正常工作。使用方式：`--model kimi-k2.5`。
 | 5 | `minimax` | MiniMax / 海螺 AI | `MiniMax-Text-01` | `https://api.minimax.chat/v1` | [platform.minimaxi.com](https://platform.minimaxi.com/) |
 | 6 | `doubao` | Doubao / 豆包 (ByteDance) | `doubao-pro-32k` | `https://ark.cn-beijing.volces.com/api/v3` | [console.volcengine.com/ark](https://console.volcengine.com/ark) |
 | 7 | `zhipu` | Zhipu / 智谱 GLM | `glm-4-flash` | `https://open.bigmodel.cn/api/paas/v4` | [open.bigmodel.cn](https://open.bigmodel.cn/) |

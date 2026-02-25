@@ -136,8 +136,9 @@ func (p *KimiProvider) toOpenAIMessage(msg Message) openai.ChatCompletionMessage
 
 	case "assistant":
 		m := openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleAssistant,
-			Content: msg.Content,
+			Role:             openai.ChatMessageRoleAssistant,
+			Content:          msg.Content,
+			ReasoningContent: msg.ReasoningContent,
 		}
 		if len(msg.ToolCalls) > 0 {
 			m.ToolCalls = make([]openai.ToolCall, len(msg.ToolCalls))
@@ -199,8 +200,9 @@ func (p *KimiProvider) fromOpenAIResponse(resp openai.ChatCompletionResponse) Ch
 	}
 
 	return ChatResponse{
-		Content:      choice.Message.Content,
-		ToolCalls:    toolCalls,
-		FinishReason: finishReason,
+		Content:          choice.Message.Content,
+		ReasoningContent: choice.Message.ReasoningContent,
+		ToolCalls:        toolCalls,
+		FinishReason:     finishReason,
 	}
 }

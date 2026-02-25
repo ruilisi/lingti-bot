@@ -30,17 +30,19 @@ type ChatRequest struct {
 
 // ChatResponse represents a chat completion response
 type ChatResponse struct {
-	Content   string
-	ToolCalls []ToolCall
+	Content          string
+	ReasoningContent string // For thinking models (e.g. kimi-k2.5)
+	ToolCalls        []ToolCall
 	// FinishReason indicates why the model stopped: "stop", "tool_use", etc.
 	FinishReason string
 }
 
 // Message represents a chat message
 type Message struct {
-	Role       string // "user", "assistant", "tool"
-	Content    string
-	ToolCalls  []ToolCall       // For assistant messages with tool calls
+	Role             string // "user", "assistant", "tool"
+	Content          string
+	ReasoningContent string           // For thinking models (e.g. kimi-k2.5)
+	ToolCalls        []ToolCall       // For assistant messages with tool calls
 	ToolResult *ToolResult      // For tool result messages
 }
 
