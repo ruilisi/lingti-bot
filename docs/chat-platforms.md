@@ -4,6 +4,8 @@ lingti-bot 支持 **19 种聊天平台**，涵盖国内外主流 IM、社交和�
 
 lingti-bot supports **19 chat platforms** covering mainstream IM, social, and collaboration platforms globally. Configure via `lingti-bot onboard` interactive wizard, or specify via CLI flags and environment variables.
 
+> **Tip**: Not sure which mode to use? See [Router vs Relay](router-vs-relay.md) for a detailed comparison.
+
 ## Platform List / 平台列表
 
 | # | Platform | 名称 | Connection / 连接方式 | Setup / 接入方式 |

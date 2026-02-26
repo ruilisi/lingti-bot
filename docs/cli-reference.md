@@ -140,7 +140,7 @@ Checks:
 
 ### router
 
-Start the message router for multi-platform messaging (Slack, Telegram, Discord, Feishu).
+Start the message router for multi-platform messaging (Slack, Telegram, Discord, Feishu). See [Router vs Relay](router-vs-relay.md) for when to use router vs relay.
 
 ```bash
 lingti-bot router [flags]
@@ -278,6 +278,57 @@ Connect to `ws://localhost:18789/ws` and send JSON messages:
 | `GET /health` | Health check |
 | `GET /status` | Gateway status and client count |
 | `GET /ws` | WebSocket upgrade |
+
+---
+
+### relay
+
+Connect to the lingti-bot cloud relay service — no public server needed. See [Router vs Relay](router-vs-relay.md) for when to use relay vs router.
+
+```bash
+lingti-bot relay [flags]
+```
+
+**Supported platforms:** feishu, slack, wechat, wecom
+
+> Note: DingTalk uses Stream Mode (built-in serverless), so use `router` instead of `relay`.
+
+**Flags:**
+
+| Flag | Env Var | Default | Description |
+|------|---------|---------|-------------|
+| `--platform` | `RELAY_PLATFORM` | | Platform: feishu, slack, wechat, wecom (required) |
+| `--user-id` | `RELAY_USER_ID` | | Your user ID from /whoami (required, except wecom) |
+| `--provider` | `AI_PROVIDER` | `claude` | AI provider: claude, deepseek, kimi |
+| `--api-key` | `AI_API_KEY` | | AI API key (required) |
+| `--server` | `RELAY_SERVER_URL` | wss://bot.lingti.com/ws | WebSocket server URL |
+
+WeCom-specific flags (when platform=wecom):
+
+| Flag | Env Var | Description |
+|------|---------|-------------|
+| `--wecom-corp-id` | `WECOM_CORP_ID` | Corp ID |
+| `--wecom-agent-id` | `WECOM_AGENT_ID` | Agent ID |
+| `--wecom-secret` | `WECOM_SECRET` | Secret |
+| `--wecom-token` | `WECOM_TOKEN` | Callback Token |
+| `--wecom-aes-key` | `WECOM_AES_KEY` | Encoding AES Key |
+
+**Examples:**
+
+```bash
+# Connect to WeCom cloud relay
+lingti-bot relay --platform wecom \
+  --wecom-corp-id CORP_ID \
+  --wecom-agent-id AGENT_ID \
+  --wecom-secret SECRET \
+  --wecom-token TOKEN \
+  --wecom-aes-key AES_KEY \
+  --provider deepseek \
+  --api-key sk-xxx
+
+# Connect to Feishu relay
+lingti-bot relay --platform feishu --user-id your-id --provider claude --api-key sk-ant-xxx
+```
 
 ---
 
