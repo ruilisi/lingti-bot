@@ -33,3 +33,4 @@ dist
 .env
 *.local.json
 *.env
+.claude/worktrees/
