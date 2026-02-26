@@ -219,26 +219,38 @@ lingti-bot gateway [flags]
 | Flag | Env Var | Default | Description |
 |------|---------|---------|-------------|
 | `--addr` | `GATEWAY_ADDR` | `:18789` | Gateway listen address |
-| `--auth-token` | `GATEWAY_AUTH_TOKEN` | | Optional authentication token |
+| `--auth-token` | `GATEWAY_AUTH_TOKEN` | | Single authentication token |
+| `--auth-tokens` | `GATEWAY_AUTH_TOKENS` | | Comma-separated list of tokens (multiple admins) |
 | `--provider` | `AI_PROVIDER` | `claude` | AI provider: claude, deepseek, kimi |
 | `--api-key` | `AI_API_KEY` | | AI API key (required) |
 | `--base-url` | `AI_BASE_URL` | | Custom AI API base URL |
 | `--model` | `AI_MODEL` | auto | Model name |
 
+**Auth tokens** control who can connect to the gateway. When no token is configured, all connections are accepted. When one or more tokens are set, a client must send a valid token in its `auth` message before it can send chat or command messages. Any token in the list grants full access — there is no per-token permission distinction.
+
 **Examples:**
 
 ```bash
-# Basic gateway
+# Basic gateway (no authentication)
 lingti-bot gateway \
   --provider claude \
   --api-key sk-ant-xxx
 
-# Custom port with authentication
+# Single admin token
 lingti-bot gateway \
   --addr :8080 \
   --auth-token my-secret-token \
   --provider claude \
   --api-key sk-ant-xxx
+
+# Multiple admins — each with their own token
+lingti-bot gateway \
+  --auth-tokens "token-alice,token-bob,token-charlie" \
+  --provider claude \
+  --api-key sk-ant-xxx
+
+# Via environment variables
+GATEWAY_AUTH_TOKENS="token-alice,token-bob" lingti-bot gateway --api-key sk-ant-xxx
 
 # With custom base URL (proxy)
 lingti-bot gateway \
@@ -518,7 +530,8 @@ lingti-bot version
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `GATEWAY_ADDR` | Gateway listen address | `:18789` |
-| `GATEWAY_AUTH_TOKEN` | Optional authentication token | |
+| `GATEWAY_AUTH_TOKEN` | Single authentication token | |
+| `GATEWAY_AUTH_TOKENS` | Comma-separated list of tokens (multiple admins) | |
 
 ---
 
