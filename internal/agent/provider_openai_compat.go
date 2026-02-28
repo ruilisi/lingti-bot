@@ -1,9 +1,12 @@
 package agent
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 
 	"github.com/sashabaranov/go-openai"
 )
@@ -44,6 +47,12 @@ func NewOpenAICompatProvider(cfg OpenAICompatConfig) (*OpenAICompatProvider, err
 
 	config := openai.DefaultConfig(apiKey)
 	config.BaseURL = baseURL
+
+	if cfg.ProviderName == "gemini" {
+		config.HTTPClient = &http.Client{
+			Transport: &geminiRoundTripper{base: http.DefaultTransport},
+		}
+	}
 
 	return &OpenAICompatProvider{
 		client:       openai.NewClientWithConfig(config),
@@ -197,4 +206,54 @@ func (p *OpenAICompatProvider) fromOpenAIResponse(resp openai.ChatCompletionResp
 		ToolCalls:    toolCalls,
 		FinishReason: finishReason,
 	}
+}
+
+// geminiRoundTripper wraps an http.RoundTripper to fix Gemini API incompatibilities:
+// 1. Injects "thinking": {"thinking_budget": 0} into requests to avoid thought_signature errors
+// 2. Unwraps array error responses [{error:...}] into {error:...} for go-openai compatibility
+type geminiRoundTripper struct {
+	base http.RoundTripper
+}
+
+func (g *geminiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Inject thinking_budget: 0 into request body
+	if req.Body != nil && req.Method == http.MethodPost {
+		body, err := io.ReadAll(req.Body)
+		req.Body.Close()
+		if err == nil {
+			var payload map[string]any
+			if json.Unmarshal(body, &payload) == nil {
+				payload["thinking"] = map[string]any{"thinking_budget": 0}
+				if modified, err := json.Marshal(payload); err == nil {
+					body = modified
+				}
+			}
+			req.Body = io.NopCloser(bytes.NewReader(body))
+			req.ContentLength = int64(len(body))
+		}
+	}
+
+	resp, err := g.base.RoundTrip(req)
+	if err != nil {
+		return resp, err
+	}
+
+	// Fix array error responses: [{error:...}] -> {error:...}
+	if resp.StatusCode >= 400 {
+		body, err := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err == nil {
+			body = bytes.TrimSpace(body)
+			if len(body) > 0 && body[0] == '[' {
+				var arr []json.RawMessage
+				if json.Unmarshal(body, &arr) == nil && len(arr) > 0 {
+					body = arr[0]
+				}
+			}
+			resp.Body = io.NopCloser(bytes.NewReader(body))
+			resp.ContentLength = int64(len(body))
+		}
+	}
+
+	return resp, nil
 }
