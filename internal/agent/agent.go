@@ -31,6 +31,7 @@ type Agent struct {
 	pathChecker        *security.PathChecker
 	disableFileTools   bool
 	maxToolRounds      int
+	callTimeoutSecs    int
 	mcpManager         *mcpclient.Manager
 }
 
@@ -45,6 +46,7 @@ type Config struct {
 	AllowedPaths       []string // Restrict file/shell operations to these directories (empty = no restriction)
 	DisableFileTools   bool     // Completely disable all file operation tools
 	MaxToolRounds      int      // Max tool-call iterations per message (0 = use default 100)
+	CallTimeoutSecs    int      // Base timeout in seconds for each AI API call (0 = use default 90s base)
 	MCPServers         []mcpclient.ServerConfig // External MCP servers to connect to
 }
 
@@ -72,6 +74,7 @@ func New(cfg Config) (*Agent, error) {
 		pathChecker:        security.NewPathChecker(cfg.AllowedPaths),
 		disableFileTools:   cfg.DisableFileTools,
 		maxToolRounds:      maxRounds,
+		callTimeoutSecs:    cfg.CallTimeoutSecs,
 		mcpManager:         mcpclient.New(cfg.MCPServers),
 	}, nil
 }
@@ -675,8 +678,13 @@ Current date: %s%s%s`, autoApprovalNotice, runtime.GOOS, runtime.GOARCH, homeDir
 		// Force tool_choice="required" when the last round used browser tools so DeepSeek
 		// cannot return a bare text response — it must call another tool to continue.
 		// Use a per-call timeout so a stalled API call doesn't hang the agent forever.
-		// Scale timeout with message count: 90s base + 1s per message (capped at 180s).
-		callTimeout := 90*time.Second + time.Duration(min(len(messages), 90))*time.Second
+		// Scale timeout with message count: base + 1s per message (capped at base+90s).
+		// Base defaults to 90s but can be overridden via CallTimeoutSecs config.
+		baseTimeout := 90 * time.Second
+		if a.callTimeoutSecs > 0 {
+			baseTimeout = time.Duration(a.callTimeoutSecs) * time.Second
+		}
+		callTimeout := baseTimeout + time.Duration(min(len(messages), 90))*time.Second
 		logger.Info("[Agent] Calling AI (round %d/%d, forceToolUse=%v, timeout=%s, user: %s)", round+2, maxToolRounds, hasBrowserTool, callTimeout, msg.Username)
 		chatReq := ChatRequest{
 			Messages:       messages,

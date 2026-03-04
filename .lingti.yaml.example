@@ -121,6 +121,7 @@ platforms:
 # ── AI settings & per-platform overrides ──────────────────────────────────────
 ai:
   max_rounds: 100     # max tool-call iterations per message
+  call_timeout_secs: 90   # base timeout (seconds) for each AI API call; increase for slow local models like Ollama
 
   # Override AI provider per platform or per channel (most specific match wins)
   overrides:

@@ -30,7 +30,8 @@ var (
 	relayBaseURL       string
 	relayModel         string
 	relayInstructions  string
-	relayMaxRounds     int
+	relayMaxRounds      int
+	relayCallTimeout    int
 	// WeCom credentials for cloud relay
 	relayWeComCorpID  string
 	relayWeComAgentID string
@@ -113,6 +114,7 @@ func init() {
 	relayCmd.Flags().StringVar(&relayModel, "model", "", "Model name (or AI_MODEL env)")
 	relayCmd.Flags().StringVar(&relayInstructions, "instructions", "", "Path to custom instructions file appended to system prompt")
 	relayCmd.Flags().IntVar(&relayMaxRounds, "max-rounds", 0, "Max tool-call iterations per message (default 100, or AI_MAX_ROUNDS env)")
+	relayCmd.Flags().IntVar(&relayCallTimeout, "call-timeout", 0, "Base timeout in seconds for each AI API call (default 90, or AI_CALL_TIMEOUT env)")
 
 	// WeCom credentials for cloud relay
 	relayCmd.Flags().StringVar(&relayWeComCorpID, "wecom-corp-id", "", "WeCom Corp ID (or WECOM_CORP_ID env)")
@@ -172,6 +174,13 @@ func runRelay(cmd *cobra.Command, args []string) {
 			}
 		}
 	}
+	if relayCallTimeout == 0 {
+		if v := os.Getenv("AI_CALL_TIMEOUT"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				relayCallTimeout = n
+			}
+		}
+	}
 
 	// Get WeCom credentials from flags or environment
 	if relayWeComCorpID == "" {
@@ -220,6 +229,9 @@ func runRelay(cmd *cobra.Command, args []string) {
 		}
 		if relayMaxRounds == 0 && savedCfg.AI.MaxRounds > 0 {
 			relayMaxRounds = savedCfg.AI.MaxRounds
+		}
+		if relayCallTimeout == 0 && savedCfg.AI.CallTimeoutSecs > 0 {
+			relayCallTimeout = savedCfg.AI.CallTimeoutSecs
 		}
 		// Read relay-specific config (platform, user-id) from saved config
 		if relayPlatform == "" && savedCfg.Relay.Platform != "" {
@@ -343,6 +355,7 @@ func runRelay(cmd *cobra.Command, args []string) {
 		AllowedPaths:       loadAllowedPaths(),
 		DisableFileTools:   loadDisableFileTools(),
 		MaxToolRounds:      relayMaxRounds,
+		CallTimeoutSecs:    relayCallTimeout,
 		MCPServers:         mcpServers,
 	}
 	aiAgent, err := agent.New(agentCfg)

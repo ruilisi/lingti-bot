@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 
 	"github.com/pltanton/lingti-bot/internal/agent"
@@ -88,6 +89,7 @@ var (
 	aiBaseURL            string
 	aiModel              string
 	aiInstructions       string
+	aiCallTimeout        int
 	browserDebugDir      string
 	webappPort           int
 )
@@ -168,6 +170,7 @@ func init() {
 	routerCmd.Flags().StringVar(&aiBaseURL, "base-url", "", "Custom API base URL (or AI_BASE_URL env)")
 	routerCmd.Flags().StringVar(&aiModel, "model", "", "Model name (or AI_MODEL env)")
 	routerCmd.Flags().StringVar(&aiInstructions, "instructions", "", "Path to custom instructions file appended to system prompt")
+	routerCmd.Flags().IntVar(&aiCallTimeout, "call-timeout", 0, "Base timeout in seconds for each AI API call (default 90, or AI_CALL_TIMEOUT env)")
 	routerCmd.Flags().StringVar(&browserDebugDir, "debug-dir", "", "Directory for debug screenshots (or BROWSER_DEBUG_DIR env, default: /tmp/lingti-bot on Unix)")
 	routerCmd.Flags().IntVar(&webappPort, "webapp-port", 0, "Web chat UI port (0 = disabled, or WEBAPP_PORT env)")
 }
@@ -344,6 +347,13 @@ func runRouter(cmd *cobra.Command, args []string) {
 			aiModel = os.Getenv("ANTHROPIC_MODEL")
 		}
 	}
+	if aiCallTimeout == 0 {
+		if v := os.Getenv("AI_CALL_TIMEOUT"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				aiCallTimeout = n
+			}
+		}
+	}
 	// Fallback to saved config file
 	savedCfg, cfgErr := config.Load()
 	if cfgErr == nil {
@@ -363,6 +373,9 @@ func runRouter(cmd *cobra.Command, args []string) {
 			if aiModel == "" {
 				aiModel = resolved.Model
 			}
+		}
+		if aiCallTimeout == 0 && savedCfg.AI.CallTimeoutSecs > 0 {
+			aiCallTimeout = savedCfg.AI.CallTimeoutSecs
 		}
 		if slackBotToken == "" {
 			slackBotToken = savedCfg.Platforms.Slack.BotToken
@@ -546,6 +559,7 @@ func runRouter(cmd *cobra.Command, args []string) {
 		CustomInstructions: customInstructions,
 		AllowedPaths:       loadAllowedPaths(),
 		DisableFileTools:   loadDisableFileTools(),
+		CallTimeoutSecs:    aiCallTimeout,
 	}
 	aiAgent, err := agent.New(agentCfg)
 	if err != nil {

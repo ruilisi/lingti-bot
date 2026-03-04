@@ -63,6 +63,7 @@ ai:
   base_url: ""       # 自定义 API 地址（可选）
   model: ""          # 自定义模型名（可选，留空使用 provider 默认值）
   max_rounds: 100    # 每条消息最多工具调用轮次（默认 100）
+  call_timeout_secs: 90  # 每次 AI API 调用的基础超时秒数（默认 90）；使用本地 Ollama 等慢速模型时可适当增大
 
   # 按平台/频道覆盖 AI 设置（旧格式，可选）
   # 匹配优先级：platform + channel_id > platform > 默认
@@ -172,6 +173,7 @@ security:
 | `AI_BASE_URL` | `--base-url` | 自定义 API 地址 |
 | `AI_MODEL` | `--model` | 模型名称 |
 | `AI_MAX_ROUNDS` | `--max-rounds` | 每条消息最多工具调用轮次（默认 100） |
+| `AI_CALL_TIMEOUT` | `--call-timeout` | 每次 AI API 调用的基础超时秒数（默认 90） |
 | - | `--instructions` | 自定义指令文件路径（追加到系统提示词） |
 | `ANTHROPIC_API_KEY` | `--api-key` | API 密钥（fallback） |
 | `ANTHROPIC_BASE_URL` | `--base-url` | API 地址（fallback） |

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -54,6 +55,7 @@ func init() {
 	gatewayCmd.Flags().StringVar(&aiAPIKey, "api-key", "", "AI API Key (or AI_API_KEY env)")
 	gatewayCmd.Flags().StringVar(&aiBaseURL, "base-url", "", "AI API base URL (or AI_BASE_URL env)")
 	gatewayCmd.Flags().StringVar(&aiModel, "model", "", "Model name (or AI_MODEL env)")
+	gatewayCmd.Flags().IntVar(&aiCallTimeout, "call-timeout", 0, "Base timeout in seconds for each AI API call (default 90, or AI_CALL_TIMEOUT env)")
 }
 
 func runGateway(cmd *cobra.Command, args []string) {
@@ -97,6 +99,13 @@ func runGateway(cmd *cobra.Command, args []string) {
 			aiBaseURL = os.Getenv("ANTHROPIC_BASE_URL")
 		}
 	}
+	if aiCallTimeout == 0 {
+		if v := os.Getenv("AI_CALL_TIMEOUT"); v != "" {
+			if n, err := strconv.Atoi(v); err == nil && n > 0 {
+				aiCallTimeout = n
+			}
+		}
+	}
 
 	// Load ~/.lingti.yaml and resolve named provider
 	if savedCfg, cfgErr := config.Load(); cfgErr == nil {
@@ -115,6 +124,9 @@ func runGateway(cmd *cobra.Command, args []string) {
 				aiModel = resolved.Model
 			}
 		}
+		if aiCallTimeout == 0 && savedCfg.AI.CallTimeoutSecs > 0 {
+			aiCallTimeout = savedCfg.AI.CallTimeoutSecs
+		}
 	}
 
 	if aiAPIKey == "" {
@@ -124,12 +136,13 @@ func runGateway(cmd *cobra.Command, args []string) {
 
 	// Create the AI agent
 	aiAgent, err := agent.New(agent.Config{
-		Provider:     aiProvider,
-		APIKey:       aiAPIKey,
-		BaseURL:      aiBaseURL,
-		Model:        aiModel,
+		Provider:         aiProvider,
+		APIKey:           aiAPIKey,
+		BaseURL:          aiBaseURL,
+		Model:            aiModel,
 		AllowedPaths:     loadAllowedPaths(),
 		DisableFileTools: loadDisableFileTools(),
+		CallTimeoutSecs:  aiCallTimeout,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error creating agent: %v\n", err)

@@ -85,7 +85,8 @@ type AIConfig struct {
 	APIKey     string            `yaml:"api_key,omitempty"`
 	BaseURL    string            `yaml:"base_url,omitempty"`
 	Model      string            `yaml:"model,omitempty"`
-	MaxRounds  int               `yaml:"max_rounds,omitempty"`
+	MaxRounds       int               `yaml:"max_rounds,omitempty"`
+	CallTimeoutSecs int               `yaml:"call_timeout_secs,omitempty"`
 	MCPServers []MCPServerConfig `yaml:"mcp_servers,omitempty"`
 	Overrides  []AIOverride      `yaml:"overrides,omitempty"`
 }
