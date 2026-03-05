@@ -22,17 +22,18 @@ import (
 )
 
 var (
-	relayUserID     string
-	relayPlatform   string
-	relayServerURL  string
-	relayWebhookURL string
+	relayUserID        string
+	relayPlatform      string
+	relayServerURL     string
+	relayWebhookURL    string
+	relayRefreshBotID  bool
 	relayAIProvider    string
 	relayAPIKey        string
 	relayBaseURL       string
 	relayModel         string
 	relayInstructions  string
-	relayMaxRounds      int
-	relayCallTimeout    int
+	relayMaxRounds     int
+	relayCallTimeout   int
 	// WeCom credentials for cloud relay
 	relayWeComCorpID  string
 	relayWeComAgentID string
@@ -116,6 +117,7 @@ func init() {
 	relayCmd.Flags().StringVar(&relayInstructions, "instructions", "", "Path to custom instructions file appended to system prompt")
 	relayCmd.Flags().IntVar(&relayMaxRounds, "max-rounds", 0, "Max tool-call iterations per message (default 100, or AI_MAX_ROUNDS env)")
 	relayCmd.Flags().IntVar(&relayCallTimeout, "call-timeout", 0, "Base timeout in seconds for each AI API call (default 90, or AI_CALL_TIMEOUT env)")
+	relayCmd.Flags().BoolVar(&relayRefreshBotID, "refresh-bot-id", false, "Generate a new bot ID (invalidates existing bot page links)")
 
 	// WeCom credentials for cloud relay
 	relayCmd.Flags().StringVar(&relayWeComCorpID, "wecom-corp-id", "", "WeCom Corp ID (or WECOM_CORP_ID env)")
@@ -269,14 +271,17 @@ func runRelay(cmd *cobra.Command, args []string) {
 			relayWeChatAppSecret = savedCfg.Platforms.WeChat.AppSecret
 		}
 
-		// Generate bot ID if not already set
-		if savedCfg.BotID == "" {
+		// Generate or refresh bot ID
+		if relayRefreshBotID || savedCfg.BotID == "" {
 			savedCfg.BotID = uuid.New().String()
 			if err := savedCfg.Save(); err != nil {
 				fmt.Fprintf(os.Stderr, "Warning: failed to save bot ID: %v\n", err)
 			}
 		}
-		fmt.Printf("[Relay] Your bot page: https://bot.lingti.com/bots/%s\n", savedCfg.BotID)
+		if relayRefreshBotID {
+			fmt.Printf("[Relay] Bot ID refreshed. New bot page: https://bot.lingti.com/bots/%s\n", savedCfg.BotID)
+			return
+		}
 	}
 
 	// Validate required parameters
@@ -447,6 +452,9 @@ func runRelay(cmd *cobra.Command, args []string) {
 
 	log.Printf("Relay connected. User: %s, Platform: %s", relayUserID, relayPlatform)
 	log.Printf("AI Provider: %s, Model: %s", providerName, modelName)
+	if relayBotID != "" {
+		fmt.Printf("[Relay] Your bot page: https://bot.lingti.com/bots/%s\n", relayBotID)
+	}
 	log.Println("Press Ctrl+C to stop.")
 
 	// Wait for shutdown signal

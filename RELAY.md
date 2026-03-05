@@ -139,8 +139,10 @@ lingti-bot relay \
 轮换 UUID（使现有分享链接失效）：
 
 ```bash
-lingti-bot relay --refresh-bot-id ...
+lingti-bot relay --refresh-bot-id
 ```
+
+加上 `--refresh-bot-id` 后，会立即生成新的 UUID 并保存到 `~/.lingti.yaml`，打印新链接后退出，不启动 relay 服务。旧链接立即失效。
 
 ---
 
