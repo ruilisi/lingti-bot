@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 
 	"github.com/sashabaranov/go-openai"
@@ -47,6 +48,7 @@ func NewOpenAICompatProvider(cfg OpenAICompatConfig) (*OpenAICompatProvider, err
 
 	config := openai.DefaultConfig(apiKey)
 	config.BaseURL = baseURL
+	log.Printf("[%s] base URL: %s", cfg.ProviderName, baseURL)
 
 	if cfg.ProviderName == "gemini" {
 		config.HTTPClient = &http.Client{
