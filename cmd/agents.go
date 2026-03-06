@@ -56,9 +56,10 @@ var agentsAddCmd = &cobra.Command{
 		}
 
 		if id == "" {
-			id = promptText("Agent ID", "")
+			fmt.Println("  Agent name — a short nickname you choose, e.g. \"mybot\", \"work-assistant\"")
+			id = promptText("Agent name", "")
 			if id == "" {
-				return fmt.Errorf("agent ID is required")
+				return fmt.Errorf("agent name is required")
 			}
 		}
 
@@ -161,7 +162,7 @@ var agentsListCmd = &cobra.Command{
 		}
 
 		if len(cfg.Agents) == 0 {
-			fmt.Println("No agents configured. Use 'lingti-bot agents add <id>' to add one.")
+			fmt.Println("No agents configured. Use 'lingti-bot agents add' to add one.")
 			return nil
 		}
 
